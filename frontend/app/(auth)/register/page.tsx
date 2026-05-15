@@ -14,7 +14,7 @@ import {
 import toast from "react-hot-toast";
 import { roleConfig } from "../../../lib/utils";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://task-management-k9q8.onrender.com/api";
 
 interface InviteInfo {
   valid: boolean;

@@ -71,7 +71,7 @@ export const socketMiddleware: Middleware = (store) => (next) => (action) => {
     if (!token) return result;
     if (socket) socket.disconnect();
 
-    socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
+    socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'https://task-management-k9q8.onrender.com', {
       auth: { token },
       reconnection: true,
       reconnectionAttempts: 10,
