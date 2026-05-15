@@ -1,0 +1,332 @@
+"use client";
+
+import { useState } from "react";
+import { useAppDispatch, useAppSelector } from "../../../store/index";
+import { updateUser } from "../../../store/slices/authSlice";
+import {
+  useUpdateUserMutation,
+  useChangePasswordMutation,
+} from "../../../services/allApis";
+import { Button, Avatar } from "../../../components/ui/index";
+import { setTheme } from "../../../store/slices/uiSlice";
+import toast from "react-hot-toast";
+import { User, Lock, Bell, Palette, Activity } from "lucide-react";
+
+type ProfileForm = {
+  name: string;
+  avatar: string;
+  onlineStatus: "online" | "away" | "dnd";
+  theme: "light" | "dark";
+};
+
+export default function ProfilePage() {
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((s) => s.auth);
+  const [updateUserMutation, { isLoading: saving }] = useUpdateUserMutation();
+  const [changePwd, { isLoading: changingPwd }] = useChangePasswordMutation();
+
+  const [profile, setProfile] = useState<ProfileForm>({
+    name: user?.name || "",
+    avatar: user?.avatar || "",
+    onlineStatus: user?.onlineStatus || "online",
+    theme: user?.theme || "light",
+  });
+
+  const [notifPrefs, setNotifPrefs] = useState({
+    taskAssigned: user?.notificationPrefs?.taskAssigned ?? true,
+    commentAdded: user?.notificationPrefs?.commentAdded ?? true,
+    mentioned: user?.notificationPrefs?.mentioned ?? true,
+    dueDateReminder: user?.notificationPrefs?.dueDateReminder ?? true,
+  });
+
+  const [pwdForm, setPwdForm] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [pwdErrors, setPwdErrors] = useState<Record<string, string>>({});
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    try {
+      const updated = await updateUserMutation({
+        id: user._id,
+        data: {
+          name: profile.name,
+          avatar: profile.avatar,
+          onlineStatus: profile.onlineStatus,
+          theme: profile.theme,
+        } as Parameters<typeof updateUserMutation>[0]["data"],
+      }).unwrap();
+      dispatch(
+        updateUser({
+          name: updated.name,
+          avatar: updated.avatar,
+          onlineStatus: updated.onlineStatus as "online" | "away" | "dnd",
+          theme: updated.theme as "light" | "dark",
+        }),
+      );
+      dispatch(setTheme(profile.theme as "light" | "dark"));
+      toast.success("Profile updated!");
+    } catch {
+      toast.error("Failed to update profile");
+    }
+  };
+
+  const handleSaveNotifs = async () => {
+    if (!user) return;
+    try {
+      await updateUserMutation({
+        id: user._id,
+        data: { notificationPrefs: notifPrefs } as Parameters<
+          typeof updateUserMutation
+        >[0]["data"],
+      }).unwrap();
+      dispatch(updateUser({ notificationPrefs: notifPrefs }));
+      toast.success("Notification preferences saved!");
+    } catch {
+      toast.error("Failed to save preferences");
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const errs: Record<string, string> = {};
+    if (!pwdForm.oldPassword) errs.oldPassword = "Required";
+    if (!pwdForm.newPassword || pwdForm.newPassword.length < 8)
+      errs.newPassword = "Min 8 characters";
+    if (pwdForm.newPassword !== pwdForm.confirmPassword)
+      errs.confirmPassword = "Passwords do not match";
+    setPwdErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+    if (!user) return;
+    try {
+      await changePwd({
+        id: user._id,
+        oldPassword: pwdForm.oldPassword,
+        newPassword: pwdForm.newPassword,
+      }).unwrap();
+      toast.success("Password changed!");
+      setPwdForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (err: unknown) {
+      const e = err as { data?: { message?: string } };
+      toast.error(e?.data?.message || "Failed to change password");
+    }
+  };
+
+  if (!user) return null;
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          Profile
+        </h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          Manage your account settings and preferences
+        </p>
+      </div>
+
+      {/* Profile info */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div className="flex items-center gap-2 mb-5">
+          <User className="w-4 h-4 text-slate-400" />
+          <h2 className="font-semibold text-slate-900 dark:text-white">
+            Personal Information
+          </h2>
+        </div>
+
+        <div className="flex items-center gap-4 mb-6">
+          <Avatar
+            name={profile.name || user.name}
+            avatar={profile.avatar || user.avatar}
+            size="lg"
+          />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Avatar URL
+            </p>
+            <input
+              type="url"
+              placeholder="https://example.com/avatar.jpg"
+              value={profile.avatar}
+              onChange={(e) =>
+                setProfile({ ...profile, avatar: e.target.value })
+              }
+              className="mt-1 w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              Full Name
+            </label>
+            <input
+              type="text"
+              value={profile.name}
+              onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              Email
+            </label>
+            <input
+              type="email"
+              value={user.email}
+              disabled
+              className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-500 cursor-not-allowed"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                Online Status
+              </label>
+              <select
+                value={profile.onlineStatus}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    onlineStatus: e.target.value as ProfileForm["onlineStatus"],
+                  })
+                }
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="online">🟢 Online</option>
+                <option value="away">🟡 Away</option>
+                <option value="dnd">🔴 Do Not Disturb</option>
+              </select>
+            </div>
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                <Palette className="w-3.5 h-3.5" /> Theme
+              </label>
+              <select
+                value={profile.theme}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    theme: e.target.value as ProfileForm["theme"],
+                  })
+                }
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="light">☀️ Light</option>
+                <option value="dark">🌙 Dark</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end mt-5">
+          <Button onClick={handleSaveProfile} loading={saving}>
+            Save Changes
+          </Button>
+        </div>
+      </div>
+
+      {/* Notification prefs */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div className="flex items-center gap-2 mb-5">
+          <Bell className="w-4 h-4 text-slate-400" />
+          <h2 className="font-semibold text-slate-900 dark:text-white">
+            Notification Preferences
+          </h2>
+        </div>
+
+        <div className="space-y-3">
+          {[
+            { key: "taskAssigned", label: "Task assigned to me" },
+            { key: "commentAdded", label: "New comment on my tasks" },
+            { key: "mentioned", label: "Mentioned in a comment" },
+            { key: "dueDateReminder", label: "Due date reminders" },
+          ].map(({ key, label }) => (
+            <div key={key} className="flex items-center justify-between py-2">
+              <span className="text-sm text-slate-700 dark:text-slate-300">
+                {label}
+              </span>
+              <button
+                onClick={() =>
+                  setNotifPrefs({
+                    ...notifPrefs,
+                    [key]: !notifPrefs[key as keyof typeof notifPrefs],
+                  })
+                }
+                className={`relative w-10 h-5.5 rounded-full transition-colors ${notifPrefs[key as keyof typeof notifPrefs] ? "bg-blue-600" : "bg-slate-200 dark:bg-slate-600"}`}
+                style={{ height: "22px" }}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${notifPrefs[key as keyof typeof notifPrefs] ? "translate-x-[18px]" : ""}`}
+                />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex justify-end mt-4">
+          <Button onClick={handleSaveNotifs} variant="secondary">
+            Save Preferences
+          </Button>
+        </div>
+      </div>
+
+      {/* Change password */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div className="flex items-center gap-2 mb-5">
+          <Lock className="w-4 h-4 text-slate-400" />
+          <h2 className="font-semibold text-slate-900 dark:text-white">
+            Change Password
+          </h2>
+        </div>
+
+        <form onSubmit={handleChangePassword} className="space-y-4">
+          {[
+            {
+              key: "oldPassword",
+              label: "Current Password",
+              placeholder: "••••••••",
+            },
+            {
+              key: "newPassword",
+              label: "New Password",
+              placeholder: "Minimum 8 characters",
+            },
+            {
+              key: "confirmPassword",
+              label: "Confirm New Password",
+              placeholder: "Repeat new password",
+            },
+          ].map(({ key, label, placeholder }) => (
+            <div key={key}>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                {label}
+              </label>
+              <input
+                type="password"
+                placeholder={placeholder}
+                value={pwdForm[key as keyof typeof pwdForm]}
+                onChange={(e) =>
+                  setPwdForm({ ...pwdForm, [key]: e.target.value })
+                }
+                className={`w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${pwdErrors[key] ? "border-red-500" : "border-slate-200 dark:border-slate-700"}`}
+              />
+              {pwdErrors[key] && (
+                <p className="text-red-400 text-xs mt-1">{pwdErrors[key]}</p>
+              )}
+            </div>
+          ))}
+
+          <div className="flex justify-end pt-1">
+            <Button type="submit" loading={changingPwd} variant="secondary">
+              Change Password
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

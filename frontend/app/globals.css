@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --sidebar-width: 240px;
+  --header-height: 56px;
+  --color-brand: #3b82f6;
+  --color-brand-dark: #1d4ed8;
+  --color-surface: #ffffff;
+  --color-surface-2: #f8fafc;
+  --color-surface-3: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+  --color-sidebar-bg: #0f172a;
+  --color-sidebar-text: #94a3b8;
+  --color-sidebar-active: #1e40af;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
+
+.dark {
+  --color-surface: #0f172a;
+  --color-surface-2: #1e293b;
+  --color-surface-3: #334155;
+  --color-border: #334155;
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+/* Focus ring */
+:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
+
+/* TipTap editor */
+.ProseMirror {
+  min-height: 120px;
+  padding: 12px;
+  outline: none;
+  line-height: 1.7;
+}
+.ProseMirror p { margin: 0 0 8px; }
+.ProseMirror h1, .ProseMirror h2, .ProseMirror h3 { font-weight: 600; margin: 16px 0 8px; }
+.ProseMirror ul, .ProseMirror ol { padding-left: 20px; margin: 8px 0; }
+.ProseMirror code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; }
+.dark .ProseMirror code { background: #334155; }
+.ProseMirror blockquote { border-left: 3px solid #3b82f6; padding-left: 12px; color: #64748b; margin: 8px 0; }
+.ProseMirror strong { font-weight: 600; }
+.ProseMirror em { font-style: italic; }
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+/* Kanban drag */
+.task-card-dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+  box-shadow: var(--shadow-xl);
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+}
+.dark .skeleton {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200% 100%;
+}
+
+/* Notification badge pulse */
+@keyframes notif-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+.notif-pop { animation: notif-pop 0.3s ease-out; }
+
+/* Task card enter/exit */
+@keyframes card-enter {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.card-enter { animation: card-enter 0.2s ease-out; }
+
+/* react-big-calendar overrides */
+.rbc-calendar { font-family: inherit; }
+.rbc-header { padding: 8px; font-weight: 600; font-size: 0.8rem; }
+.rbc-event {
+  border-radius: 4px !important;
+  padding: 2px 6px !important;
+  font-size: 0.75rem !important;
+  border: none !important;
+}
+.rbc-today { background-color: #eff6ff !important; }
+.dark .rbc-today { background-color: #1e293b !important; }
+.dark .rbc-calendar { color: #f1f5f9; }
+.dark .rbc-header, .dark .rbc-day-bg, .dark .rbc-month-view,
+.dark .rbc-time-view, .dark .rbc-agenda-view { border-color: #334155 !important; }
+.dark .rbc-off-range-bg { background: #0f172a; }
