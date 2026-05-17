@@ -341,8 +341,8 @@ export default function TaskDetailPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto -mt-2">
-      <div className="sticky top-14 z-10 -mx-6 border-b border-slate-200 bg-slate-50/95 px-6 py-3 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
+    <div className="max-w-7xl mx-auto">
+      <div className="mb-6 border-b border-slate-200 pb-4 dark:border-slate-800">
         <div className="flex flex-wrap items-center gap-3">
           <Link
             href={`/projects/${params.id}`}
@@ -414,7 +414,7 @@ export default function TaskDetailPage() {
             </button>
 
             {assigneePickerOpen && (
-              <div className="absolute right-0 top-11 w-80 rounded-xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-800">
+              <div className="absolute right-0 top-11 z-30 w-80 rounded-xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-800">
                 <div className="relative mb-2">
                   <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                   <input
@@ -486,7 +486,7 @@ export default function TaskDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 py-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="grid grid-cols-1 gap-8 pb-6 lg:grid-cols-[minmax(0,1fr)_280px]">
         <main className="min-w-0 space-y-10">
           <section className="border-b border-slate-200 pb-8 dark:border-slate-800">
             <div className="mb-3 flex items-center justify-between">
