@@ -1,8 +1,6 @@
 {
-  "/(main)/my-tasks/page": "app/(main)/my-tasks/page.js",
-  "/(main)/projects/[id]/tasks/[taskId]/page": "app/(main)/projects/[id]/tasks/[taskId]/page.js",
+  "/(main)/dashboard/page": "app/(main)/dashboard/page.js",
   "/(main)/notifications/page": "app/(main)/notifications/page.js",
-  "/(main)/projects/[id]/page": "app/(main)/projects/[id]/page.js",
-  "/(main)/projects/page": "app/(main)/projects/page.js",
-  "/(main)/dashboard/page": "app/(main)/dashboard/page.js"
+  "/(admin)/settings/page": "app/(admin)/settings/page.js",
+  "/(main)/projects/page": "app/(main)/projects/page.js"
 }

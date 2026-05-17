@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useRegisterMutation } from "../../../services/authApi";
 import {
@@ -14,7 +14,9 @@ import {
 import toast from "react-hot-toast";
 import { roleConfig } from "../../../lib/utils";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://task-management-k9q8.onrender.com/api";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://task-management-k9q8.onrender.com/api";
 
 interface InviteInfo {
   valid: boolean;
@@ -32,11 +34,13 @@ function RegisterContent() {
   const router = useRouter();
   const token = searchParams.get("token");
   const [register, { isLoading }] = useRegisterMutation();
+  const submittingRef = useRef(false);
 
   const [inviteInfo, setInviteInfo] = useState<InviteInfo | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [validating, setValidating] = useState(true);
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -45,6 +49,7 @@ function RegisterContent() {
     confirmPassword: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const submitting = isLoading || isSubmitting;
 
   useEffect(() => {
     if (!token) {
@@ -85,7 +90,12 @@ function RegisterContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current || isLoading) return;
     if (!validate() || !token) return;
+
+    submittingRef.current = true;
+    setIsSubmitting(true);
+
     try {
       await register({
         name: form.name,
@@ -97,6 +107,8 @@ function RegisterContent() {
     } catch (err: unknown) {
       const error = err as { data?: { message?: string } };
       toast.error(error?.data?.message || "Registration failed");
+      submittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -262,10 +274,10 @@ function RegisterContent() {
 
             <button
               type="submit"
-              disabled={isLoading}
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-medium rounded-lg text-sm transition-colors"
+              disabled={submitting}
+              className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium rounded-lg text-sm transition-colors"
             >
-              {isLoading ? (
+              {submitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" /> Creating account…
                 </span>

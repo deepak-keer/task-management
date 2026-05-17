@@ -17,9 +17,13 @@ const websockets_1 = require("@nestjs/websockets");
 const socket_io_1 = require("socket.io");
 const jwt_1 = require("@nestjs/jwt");
 const common_1 = require("@nestjs/common");
+const mongoose_1 = require("@nestjs/mongoose");
+const mongoose_2 = require("mongoose");
+const user_schema_1 = require("../users/user.schema");
 let AppGateway = class AppGateway {
-    constructor(jwtService) {
+    constructor(jwtService, userModel) {
         this.jwtService = jwtService;
+        this.userModel = userModel;
         this.logger = new common_1.Logger('AppGateway');
         this.userSocketMap = new Map();
     }
@@ -32,6 +36,16 @@ let AppGateway = class AppGateway {
                 return;
             }
             const payload = this.jwtService.verify(token);
+            const user = await this.userModel.findById(payload.userId).select('status').exec();
+            if (!user || user.status !== 'active') {
+                if (user?.status === 'banned') {
+                    client.emit('user-banned', { userId: payload.userId });
+                    setTimeout(() => client.disconnect(), 250);
+                    return;
+                }
+                client.disconnect();
+                return;
+            }
             client.userId = payload.userId;
             client.userRole = payload.role;
             client.join(`user:${payload.userId}`);
@@ -88,6 +102,22 @@ let AppGateway = class AppGateway {
     emitToUser(userId, event, data) {
         this.server.to(`user:${userId}`).emit(event, data);
     }
+    forceLogoutUser(userId, event, data) {
+        const room = `user:${userId}`;
+        const sockets = this.userSocketMap.get(userId);
+        this.server.to(room).emit(event, data);
+        this.server.emit('account-status-changed', { userId, status: 'banned' });
+        sockets?.forEach((socketId) => {
+            this.server.sockets.sockets.get(socketId)?.emit(event, data);
+        });
+        setTimeout(() => {
+            sockets?.forEach((socketId) => {
+                this.server.sockets.sockets.get(socketId)?.disconnect(true);
+            });
+            this.server.in(room).disconnectSockets(true);
+            this.userSocketMap.delete(userId);
+        }, 1000);
+    }
     emitToAll(event, data) {
         this.server.emit(event, data);
     }
@@ -132,10 +162,12 @@ __decorate([
 exports.AppGateway = AppGateway = __decorate([
     (0, websockets_1.WebSocketGateway)({
         cors: {
-            origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+            origin: process.env.FRONTEND_URL || 'https://task-management-karmyug.vercel.app',
             credentials: true,
         },
     }),
-    __metadata("design:paramtypes", [jwt_1.JwtService])
+    __param(1, (0, mongoose_1.InjectModel)(user_schema_1.User.name)),
+    __metadata("design:paramtypes", [jwt_1.JwtService,
+        mongoose_2.Model])
 ], AppGateway);
 //# sourceMappingURL=app.gateway.js.map

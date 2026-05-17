@@ -1,8 +1,8 @@
 'use client';
 
-import { Bell, Search, LogOut, Menu } from 'lucide-react';
+import { Bell, Search, LogOut } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/index';
-import { toggleSidebar, toggleCommandPalette } from '../../store/slices/uiSlice';
+import { toggleCommandPalette } from '../../store/slices/uiSlice';
 import { logout } from '../../store/slices/authSlice';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -12,7 +12,6 @@ export default function Header() {
   const router = useRouter();
   const unreadCount = useAppSelector((s) => s.notifications.unreadCount);
   const { user } = useAppSelector((s) => s.auth);
-  const sidebarOpen = useAppSelector((s) => s.ui.sidebarOpen);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -21,15 +20,6 @@ export default function Header() {
 
   return (
     <header className="h-14 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center px-4 gap-3 flex-shrink-0 sticky top-0 z-20">
-      {!sidebarOpen && (
-        <button
-          onClick={() => dispatch(toggleSidebar())}
-          className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
-      )}
-
       {/* Search trigger */}
       <button
         onClick={() => dispatch(toggleCommandPalette())}

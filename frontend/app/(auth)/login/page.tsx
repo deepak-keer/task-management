@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useLoginMutation } from "../../../services/authApi";
@@ -17,26 +17,42 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const submitting = isLoading || isSubmitting;
 
   useEffect(() => {
     if (isAuthenticated) router.replace("/dashboard");
   }, [isAuthenticated, router]);
 
-  const validate = () => {
+  const sanitizeForm = () => ({
+    email: form.email.trim(),
+    password: form.password.trim(),
+  });
+
+  const validate = (values = sanitizeForm()) => {
     const e: Record<string, string> = {};
-    if (!form.email) e.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(form.email))
+    if (!values.email) e.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(values.email))
       e.email = "Invalid email address";
-    if (!form.password) e.password = "Password is required";
+    if (!values.password) e.password = "Password is required";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
+    if (submittingRef.current || isLoading) return;
+
+    const sanitizedForm = sanitizeForm();
+    setForm(sanitizedForm);
+    if (!validate(sanitizedForm)) return;
+
+    submittingRef.current = true;
+    setIsSubmitting(true);
+
     try {
-      const result = await login(form).unwrap();
+      const result = await login(sanitizedForm).unwrap();
       dispatch(
         setCredentials({
           user: result.user,
@@ -58,6 +74,8 @@ export default function LoginPage() {
       } else {
         toast.error(msg);
       }
+      submittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -133,10 +151,10 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={submitting}
               className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800"
             >
-              {isLoading ? (
+              {submitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg
                     className="animate-spin w-4 h-4"

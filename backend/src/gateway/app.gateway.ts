@@ -10,6 +10,9 @@ import {
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { Logger } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { User, UserDocument } from '../users/user.schema';
 
 interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -18,7 +21,7 @@ interface AuthenticatedSocket extends Socket {
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: process.env.FRONTEND_URL || 'https://task-management-karmyug.vercel.app',
     credentials: true,
   },
 })
@@ -29,7 +32,10 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private logger = new Logger('AppGateway');
   private userSocketMap = new Map<string, Set<string>>(); // userId -> socketIds
 
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+  ) {}
 
   async handleConnection(client: AuthenticatedSocket) {
     try {
@@ -43,6 +49,17 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       const payload = this.jwtService.verify<{ userId: string; role: string }>(token);
+      const user = await this.userModel.findById(payload.userId).select('status').exec();
+      if (!user || user.status !== 'active') {
+        if (user?.status === 'banned') {
+          client.emit('user-banned', { userId: payload.userId });
+          setTimeout(() => client.disconnect(), 250);
+          return;
+        }
+        client.disconnect();
+        return;
+      }
+
       client.userId = payload.userId;
       client.userRole = payload.role;
 
@@ -125,6 +142,26 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   emitToUser(userId: string, event: string, data: unknown) {
     this.server.to(`user:${userId}`).emit(event, data);
+  }
+
+  forceLogoutUser(userId: string, event: string, data: unknown) {
+    const room = `user:${userId}`;
+    const sockets = this.userSocketMap.get(userId);
+
+    this.server.to(room).emit(event, data);
+    this.server.emit('account-status-changed', { userId, status: 'banned' });
+
+    sockets?.forEach((socketId) => {
+      this.server.sockets.sockets.get(socketId)?.emit(event, data);
+    });
+
+    setTimeout(() => {
+      sockets?.forEach((socketId) => {
+        this.server.sockets.sockets.get(socketId)?.disconnect(true);
+      });
+      this.server.in(room).disconnectSockets(true);
+      this.userSocketMap.delete(userId);
+    }, 1000);
   }
 
   emitToAll(event: string, data: unknown) {

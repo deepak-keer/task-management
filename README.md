@@ -66,8 +66,8 @@ FRONTEND_URL=http://localhost:3000
 cd frontend && cp .env.example .env.local
 ```
 ```
-NEXT_PUBLIC_API_URL=http://localhost:3001/api
-NEXT_PUBLIC_SOCKET_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=https://task-management-k9q8.onrender.com/api
+NEXT_PUBLIC_SOCKET_URL=https://task-management-k9q8.onrender.com
 ```
 
 ### 3. Seed the Super Admin

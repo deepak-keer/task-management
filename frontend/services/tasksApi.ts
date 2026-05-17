@@ -21,15 +21,33 @@ export const tasksApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getTasks: builder.query<TaskCard[], TaskFilters>({
       query: (params) => ({ url: '/tasks', params }),
-      providesTags: ['Task'],
+      providesTags: (result) =>
+        result
+          ? [
+              { type: 'Task' as const, id: 'LIST' },
+              ...result.map((task) => ({ type: 'Task' as const, id: task._id })),
+            ]
+          : [{ type: 'Task' as const, id: 'LIST' }],
     }),
     getMyTasks: builder.query<TaskCard[], void>({
       query: () => '/tasks/my',
-      providesTags: ['Task'],
+      providesTags: (result) =>
+        result
+          ? [
+              { type: 'Task' as const, id: 'MY' },
+              ...result.map((task) => ({ type: 'Task' as const, id: task._id })),
+            ]
+          : [{ type: 'Task' as const, id: 'MY' }],
     }),
     getOverdueTasks: builder.query<TaskCard[], void>({
       query: () => '/tasks/overdue',
-      providesTags: ['Task'],
+      providesTags: (result) =>
+        result
+          ? [
+              { type: 'Task' as const, id: 'OVERDUE' },
+              ...result.map((task) => ({ type: 'Task' as const, id: task._id })),
+            ]
+          : [{ type: 'Task' as const, id: 'OVERDUE' }],
     }),
     getTask: builder.query<TaskCard, string>({
       query: (id) => `/tasks/${id}`,
@@ -37,7 +55,11 @@ export const tasksApi = baseApi.injectEndpoints({
     }),
     createTask: builder.mutation<TaskCard, CreateTaskInput>({
       query: (body) => ({ url: '/tasks', method: 'POST', body }),
-      invalidatesTags: ['Task'],
+      invalidatesTags: [
+        { type: 'Task', id: 'LIST' },
+        { type: 'Task', id: 'MY' },
+        { type: 'Task', id: 'OVERDUE' },
+      ],
     }),
     updateTask: builder.mutation<TaskCard, { id: string; data: Partial<TaskCard> & { assigneeId?: string | null } }>({
       query: ({ id, data }) => ({ url: `/tasks/${id}`, method: 'PATCH', body: data }),
@@ -48,7 +70,11 @@ export const tasksApi = baseApi.injectEndpoints({
     }),
     deleteTask: builder.mutation<void, string>({
       query: (id) => ({ url: `/tasks/${id}`, method: 'DELETE' }),
-      invalidatesTags: ['Task'],
+      invalidatesTags: [
+        { type: 'Task', id: 'LIST' },
+        { type: 'Task', id: 'MY' },
+        { type: 'Task', id: 'OVERDUE' },
+      ],
     }),
     addSubtask: builder.mutation<TaskCard, { taskId: string; title: string }>({
       query: ({ taskId, title }) => ({ url: `/tasks/${taskId}/subtasks`, method: 'POST', body: { title } }),

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import {
   DndContext, DragEndEvent, DragOverlay, DragStartEvent,
@@ -20,6 +20,7 @@ import CreateTaskModal from '../../../../components/tasks/CreateTaskModal';
 import { Avatar, SkeletonCard, Button } from '../../../../components/ui/index';
 import { LayoutGrid, List, Plus, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Link from 'next/link';
 
 const DEFAULT_COLUMNS = [
   { id: 'todo', name: 'To Do', order: 0, color: '#64748b' },
@@ -43,11 +44,20 @@ export default function BoardPage() {
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
 
   const { data: project, isLoading: projectLoading } = useGetProjectQuery(projectId);
-  const { data: taskList = [], isLoading: tasksLoading } = useGetTasksQuery({ projectId });
+  const { data: taskList, isLoading: tasksLoading } = useGetTasksQuery({ projectId });
   const [moveTask] = useMoveTaskMutation();
-  const projectColumns = Array.isArray(project?.columns) && project.columns.length > 0 ? project.columns : DEFAULT_COLUMNS;
-  const projectMembers = Array.isArray(project?.members) ? project.members : [];
-  const projectTasks = Array.isArray(taskList) ? taskList : [];
+  const projectColumns = useMemo(
+    () => (Array.isArray(project?.columns) && project.columns.length > 0 ? project.columns : DEFAULT_COLUMNS),
+    [project?.columns],
+  );
+  const projectMembers = useMemo(
+    () => (Array.isArray(project?.members) ? project.members : []),
+    [project?.members],
+  );
+  const projectTasks = useMemo(
+    () => (Array.isArray(taskList) ? taskList : []),
+    [taskList],
+  );
 
   const canCreatePermission = usePermission('create_tasks');
   const canMovePermission = usePermission('move_tasks');
@@ -209,12 +219,16 @@ export default function BoardPage() {
         <div className="flex-1 overflow-auto p-6">
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700">
             {Object.values(tasks).map((task) => (
-              <div key={task._id} className="flex items-center gap-4 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+              <Link
+                key={task._id}
+                href={`/projects/${projectId}/tasks/${task._id}`}
+                className="flex items-center gap-4 px-4 py-3 hover:bg-slate-50 focus:bg-slate-50 focus:outline-none dark:hover:bg-slate-700/50 dark:focus:bg-slate-700/50 transition-colors"
+              >
                 <span className="text-sm text-slate-400 w-20 flex-shrink-0 capitalize">{task.column.replace('_', ' ')}</span>
                 <span className="flex-1 text-sm font-medium text-slate-900 dark:text-white truncate">{task.title}</span>
                 {task.assignee && <Avatar name={task.assignee.name} avatar={task.assignee.avatar} size="xs" />}
                 {task.dueDate && <span className="text-xs text-slate-400">{new Date(task.dueDate).toLocaleDateString()}</span>}
-              </div>
+              </Link>
             ))}
           </div>
         </div>

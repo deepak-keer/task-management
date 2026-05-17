@@ -26,7 +26,12 @@ function ThemeApplier({ children }: { children: React.ReactNode }) {
 function PermissionsHydrator() {
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
-  const { data } = useGetMeQuery(undefined, { skip: !isAuthenticated });
+  const { data } = useGetMeQuery(undefined, {
+    skip: !isAuthenticated,
+    pollingInterval: 5000,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
 
   useEffect(() => {
     if (data?.permissions) {

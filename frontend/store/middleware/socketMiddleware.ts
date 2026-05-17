@@ -1,4 +1,4 @@
-import { Middleware } from '@reduxjs/toolkit';
+import { Middleware, MiddlewareAPI } from '@reduxjs/toolkit';
 import { io, Socket } from 'socket.io-client';
 import React from 'react';
 import toast from 'react-hot-toast';
@@ -9,6 +9,14 @@ import { connectSocket, setConnected, setUserOnline, setUserOffline, updateUserS
 import { baseApi } from '../../services/baseApi';
 
 let socket: Socket | null = null;
+let banChannel: BroadcastChannel | null = null;
+let banStorageListenerBound = false;
+
+const taskListTags = [
+  { type: 'Task' as const, id: 'LIST' },
+  { type: 'Task' as const, id: 'MY' },
+  { type: 'Task' as const, id: 'OVERDUE' },
+];
 
 type SocketState = {
   auth: {
@@ -62,9 +70,58 @@ const showNotificationToast = (notification: { message: string; link?: string })
   );
 };
 
+const logoutBannedUser = (store: MiddlewareAPI) => {
+  toast.error('Your account has been suspended.');
+  socket?.disconnect();
+  socket = null;
+  store.dispatch(baseApi.util.resetApiState());
+  store.dispatch(logout());
+  window.location.replace('/login');
+};
+
+const notifyOtherTabsAboutBan = (userId: string) => {
+  if (typeof window === 'undefined') return;
+
+  banChannel?.postMessage({ userId });
+  localStorage.setItem('banned-user-logout', JSON.stringify({ userId, at: Date.now() }));
+};
+
+const ensureBanChannel = (store: MiddlewareAPI) => {
+  if (typeof window === 'undefined') return;
+
+  if (!banChannel && 'BroadcastChannel' in window) {
+    banChannel = new BroadcastChannel('auth-ban');
+    banChannel.onmessage = (event) => {
+      const userId = event.data?.userId;
+      const state = store.getState() as SocketState;
+      if (userId && state.auth.user?._id === userId) {
+        logoutBannedUser(store);
+      }
+    };
+  }
+
+  if (!banStorageListenerBound) {
+    banStorageListenerBound = true;
+    window.addEventListener('storage', (event) => {
+      if (event.key !== 'banned-user-logout' || !event.newValue) return;
+
+      try {
+        const { userId } = JSON.parse(event.newValue) as { userId?: string };
+        const state = store.getState() as SocketState;
+        if (userId && state.auth.user?._id === userId) {
+          logoutBannedUser(store);
+        }
+      } catch {
+        // Ignore malformed cross-tab messages.
+      }
+    });
+  }
+};
+
 export const socketMiddleware: Middleware = (store) => (next) => (action) => {
   const result = next(action);
   const state = store.getState() as SocketState;
+  ensureBanChannel(store);
 
   if (setCredentials.match(action) || connectSocket.match(action)) {
     const token = setCredentials.match(action) ? action.payload.accessToken : state.auth.token;
@@ -94,7 +151,7 @@ export const socketMiddleware: Middleware = (store) => (next) => (action) => {
       if (isVisibleTaskForUser(task, store.getState() as SocketState)) {
         store.dispatch(addTask(task));
       }
-      store.dispatch(baseApi.util.invalidateTags(['Task', 'Project']));
+      store.dispatch(baseApi.util.invalidateTags([...taskListTags, 'Project']));
     });
 
     socket.on('task-updated', (task) => {
@@ -103,7 +160,7 @@ export const socketMiddleware: Middleware = (store) => (next) => (action) => {
       } else {
         store.dispatch(removeTask(task._id));
       }
-      store.dispatch(baseApi.util.invalidateTags(['Task', 'Project', { type: 'Task', id: task._id }]));
+      store.dispatch(baseApi.util.invalidateTags([...taskListTags, 'Project', { type: 'Task', id: task._id }]));
     });
 
     socket.on('task-moved', ({ task }) => {
@@ -116,7 +173,7 @@ export const socketMiddleware: Middleware = (store) => (next) => (action) => {
 
     socket.on('task-deleted', ({ taskId }) => {
       store.dispatch(removeTask(taskId));
-      store.dispatch(baseApi.util.invalidateTags(['Task']));
+      store.dispatch(baseApi.util.invalidateTags(taskListTags));
     });
 
     socket.on('notification', (notification) => {
@@ -157,6 +214,22 @@ export const socketMiddleware: Middleware = (store) => (next) => (action) => {
 
     socket.on('user-rejected', () => {
       window.location.href = '/rejected';
+    });
+
+    socket.on('user-banned', ({ userId } = {}) => {
+      const currentUserId = (store.getState() as SocketState).auth.user?._id;
+      if (!userId || userId === currentUserId) {
+        if (currentUserId) notifyOtherTabsAboutBan(currentUserId);
+        logoutBannedUser(store);
+      }
+    });
+
+    socket.on('account-status-changed', ({ userId, status } = {}) => {
+      const currentUserId = (store.getState() as SocketState).auth.user?._id;
+      if (status === 'banned' && userId === currentUserId) {
+        notifyOtherTabsAboutBan(userId);
+        logoutBannedUser(store);
+      }
     });
   }
 

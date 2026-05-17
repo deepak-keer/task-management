@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   useGetSuperAdminUsersQuery, useGetPendingApprovalsQuery,
   useApproveUserMutation, useRejectUserMutation,
@@ -16,6 +16,8 @@ export default function AdminUsersPage() {
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'pending'>('all');
+  const pendingActionsRef = useRef(new Set<string>());
+  const [pendingActions, setPendingActions] = useState<Record<string, boolean>>({});
 
   const { data: usersData, isLoading } = useGetSuperAdminUsersQuery({ search, role: roleFilter, status: statusFilter });
   const { data: pending = [] } = useGetPendingApprovalsQuery();
@@ -27,32 +29,63 @@ export default function AdminUsersPage() {
 
   const users = usersData?.users ?? [];
 
+  const runUserAction = async (key: string, action: () => Promise<void>) => {
+    if (pendingActionsRef.current.has(key)) return;
+
+    pendingActionsRef.current.add(key);
+    setPendingActions((current) => ({ ...current, [key]: true }));
+
+    try {
+      await action();
+    } finally {
+      pendingActionsRef.current.delete(key);
+      setPendingActions((current) => {
+        const next = { ...current };
+        delete next[key];
+        return next;
+      });
+    }
+  };
+
+  const isUserActionPending = (id: string) =>
+    Object.keys(pendingActions).some((key) => key.startsWith(`${id}:`));
+
   const handleApprove = async (id: string) => {
-    try { await approve(id).unwrap(); toast.success('User approved!'); }
-    catch { toast.error('Failed to approve user'); }
+    await runUserAction(`${id}:approve`, async () => {
+      try { await approve(id).unwrap(); toast.success('User approved!'); }
+      catch { toast.error('Failed to approve user'); }
+    });
   };
 
   const handleReject = async (id: string) => {
-    if (!confirm('Reject this user?')) return;
-    try { await reject({ id }).unwrap(); toast.success('User rejected'); }
-    catch { toast.error('Failed to reject user'); }
+    await runUserAction(`${id}:reject`, async () => {
+      if (!confirm('Reject this user?')) return;
+      try { await reject({ id }).unwrap(); toast.success('User rejected'); }
+      catch { toast.error('Failed to reject user'); }
+    });
   };
 
   const handleBan = async (id: string) => {
-    if (!confirm('Ban this user?')) return;
-    try { await ban(id).unwrap(); toast.success('User banned'); }
-    catch { toast.error('Failed to ban user'); }
+    await runUserAction(`${id}:ban`, async () => {
+      if (!confirm('Ban this user?')) return;
+      try { await ban(id).unwrap(); toast.success('User banned'); }
+      catch { toast.error('Failed to ban user'); }
+    });
   };
 
   const handleUnban = async (id: string) => {
-    try { await unban(id).unwrap(); toast.success('User unbanned'); }
-    catch { toast.error('Failed to unban user'); }
+    await runUserAction(`${id}:unban`, async () => {
+      try { await unban(id).unwrap(); toast.success('User unbanned'); }
+      catch { toast.error('Failed to unban user'); }
+    });
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Permanently delete this user? This cannot be undone.')) return;
-    try { await deleteUser(id).unwrap(); toast.success('User deleted'); }
-    catch { toast.error('Failed to delete user'); }
+    await runUserAction(`${id}:delete`, async () => {
+      if (!confirm('Permanently delete this user? This cannot be undone.')) return;
+      try { await deleteUser(id).unwrap(); toast.success('User deleted'); }
+      catch { toast.error('Failed to delete user'); }
+    });
   };
 
   const displayUsers = activeTab === 'pending' ? pending : users;
@@ -129,7 +162,10 @@ export default function AdminUsersPage() {
                   ))}
                 </tr>
               ))}
-              {!isLoading && displayUsers.map((u) => (
+              {!isLoading && displayUsers.map((u) => {
+                const actionPending = isUserActionPending(u._id);
+
+                return (
                 <tr key={u._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
@@ -150,38 +186,39 @@ export default function AdminUsersPage() {
                     <div className="flex items-center justify-end gap-1">
                       {u.status === 'pending' && (
                         <>
-                          <button onClick={() => handleApprove(u._id)} title="Approve"
-                            className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
+                          <button onClick={() => handleApprove(u._id)} title="Approve" disabled={actionPending}
+                            className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-green-900/20 transition-colors">
                             <CheckCircle className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleReject(u._id)} title="Reject"
-                            className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                          <button onClick={() => handleReject(u._id)} title="Reject" disabled={actionPending}
+                            className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-red-900/20 transition-colors">
                             <XCircle className="w-4 h-4" />
                           </button>
                         </>
                       )}
                       {u.status === 'active' && u.role !== 'super_admin' && (
-                        <button onClick={() => handleBan(u._id)} title="Ban"
-                          className="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors">
+                        <button onClick={() => handleBan(u._id)} title="Ban" disabled={actionPending}
+                          className="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-orange-900/20 transition-colors">
                           <ShieldBan className="w-4 h-4" />
                         </button>
                       )}
                       {u.status === 'banned' && (
-                        <button onClick={() => handleUnban(u._id)} title="Unban"
-                          className="px-2 py-1 rounded-lg text-xs font-medium text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
+                        <button onClick={() => handleUnban(u._id)} title="Unban" disabled={actionPending}
+                          className="px-2 py-1 rounded-lg text-xs font-medium text-green-600 hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-green-900/20 transition-colors">
                           Unban
                         </button>
                       )}
                       {u.role !== 'super_admin' && (
-                        <button onClick={() => handleDelete(u._id)} title="Delete"
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                        <button onClick={() => handleDelete(u._id)} title="Delete" disabled={actionPending}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-red-900/20 transition-colors">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       )}
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

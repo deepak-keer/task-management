@@ -110,6 +110,7 @@ export class SuperAdminService {
       .select('-password')
       .exec();
     if (!updated) throw new NotFoundException('User not found');
+    this.appGateway.forceLogoutUser(id, 'user-banned', { userId: id });
     return updated;
   }
 

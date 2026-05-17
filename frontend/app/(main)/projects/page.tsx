@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   useGetProjectsQuery,
   useCreateProjectMutation,
@@ -12,11 +13,13 @@ import {
   Button,
 } from "../../../components/ui/index";
 import { usePermission } from "../../../hooks/usePermission";
-import { FolderOpen, Plus, Users, Archive, Search } from "lucide-react";
+import { formatRelative } from "../../../lib/utils";
+import { FolderOpen, Plus, Users, Archive, Search, LayoutGrid, List } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 
 export default function ProjectsPage() {
+  const router = useRouter();
   const { data: projects = [], isLoading } = useGetProjectsQuery();
   const [createProject, { isLoading: creating }] = useCreateProjectMutation();
   const canCreate = usePermission("create_projects");
@@ -24,6 +27,7 @@ export default function ProjectsPage() {
   const [form, setForm] = useState({ name: "", description: "" });
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
 
   const filtered = projects.filter((p) => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
@@ -88,15 +92,41 @@ export default function ProjectsPage() {
             {f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
         ))}
+        <div className="flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5">
+          <button
+            type="button"
+            onClick={() => setViewMode("grid")}
+            className={`p-1.5 rounded-md transition-colors ${viewMode === "grid" ? "bg-blue-600 text-white" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-200"}`}
+            title="Grid view"
+          >
+            <LayoutGrid className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("table")}
+            className={`p-1.5 rounded-md transition-colors ${viewMode === "table" ? "bg-blue-600 text-white" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-200"}`}
+            title="Table view"
+          >
+            <List className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      {/* Grid */}
+      {/* Projects */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <SkeletonCard key={i} />
-          ))}
-        </div>
+        viewMode === "grid" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="skeleton h-10 w-full" />
+            ))}
+          </div>
+        )
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={<FolderOpen className="w-8 h-8" />}
@@ -114,7 +144,7 @@ export default function ProjectsPage() {
             ) : undefined
           }
         />
-      ) : (
+      ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((project) => (
             <Link
@@ -165,6 +195,72 @@ export default function ProjectsPage() {
               </div>
             </Link>
           ))}
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50">
+                  <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Project</th>
+                  <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Owner</th>
+                  <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Members</th>
+                  <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Status</th>
+                  <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Updated</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                {filtered.map((project) => (
+                  <tr
+                    key={project._id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => router.push(`/projects/${project._id}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        router.push(`/projects/${project._id}`);
+                      }
+                    }}
+                    className="cursor-pointer hover:bg-slate-50 focus:bg-slate-50 focus:outline-none dark:hover:bg-slate-700/30 dark:focus:bg-slate-700/30 transition-colors"
+                  >
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-blue-600/10 flex items-center justify-center flex-shrink-0">
+                          {project.isArchived ? (
+                            <Archive className="w-4 h-4 text-slate-400" />
+                          ) : (
+                            <FolderOpen className="w-4 h-4 text-blue-600" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-slate-900 dark:text-white truncate">{project.name}</p>
+                          {project.description && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-xs">
+                              {project.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{project.owner.name}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                        <Users className="w-3.5 h-3.5" />
+                        <span>{project.members.length}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${project.isArchived ? "bg-slate-100 dark:bg-slate-700 text-slate-500" : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"}`}>
+                        {project.isArchived ? "Archived" : "Active"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-500">{formatRelative(project.updatedAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
