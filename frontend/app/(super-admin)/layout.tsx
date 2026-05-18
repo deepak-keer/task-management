@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAppSelector } from '../../store/index';
+import { useAppDispatch, useAppSelector } from '../../store/index';
+import { setSidebarOpen } from '../../store/slices/uiSlice';
 import { cn } from '../../lib/utils';
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
@@ -10,13 +11,15 @@ import CommandPalette from '../../components/shared/CommandPalette';
 
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const [mounted, setMounted] = useState(false);
   const { isAuthenticated, user } = useAppSelector((s) => s.auth);
   const sidebarOpen = useAppSelector((s) => s.ui.sidebarOpen);
 
   useEffect(() => {
+    dispatch(setSidebarOpen(window.innerWidth >= 1024));
     setMounted(true);
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     if (!mounted) return;
