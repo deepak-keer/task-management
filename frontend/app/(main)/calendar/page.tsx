@@ -53,10 +53,10 @@ export default function CalendarPage() {
   const handleToday = () => setCurrentDate(new Date());
 
   return (
-    <div className="max-w-5xl mx-auto space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto max-w-5xl space-y-5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white sm:text-2xl">
             Calendar
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -67,8 +67,8 @@ export default function CalendarPage() {
 
       {/* Calendar controls */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-700">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <div className="flex items-center justify-between gap-2 sm:justify-start">
             <button
               onClick={handlePrev}
               className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition-colors"
@@ -83,7 +83,7 @@ export default function CalendarPage() {
                 <path d="M15 18l-6-6 6-6" />
               </svg>
             </button>
-            <span className="font-semibold text-slate-900 dark:text-white min-w-[160px] text-center">
+            <span className="min-w-0 flex-1 text-center font-semibold text-slate-900 dark:text-white sm:min-w-[160px] sm:flex-none">
               {monthName}
             </span>
             <button
@@ -103,7 +103,7 @@ export default function CalendarPage() {
           </div>
           <button
             onClick={handleToday}
-            className="px-3 py-1.5 text-sm bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg transition-colors font-medium"
+            className="w-full px-3 py-1.5 text-sm bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg transition-colors font-medium sm:w-auto"
           >
             Today
           </button>
@@ -133,7 +133,7 @@ export default function CalendarPage() {
             return (
               <div
                 key={i}
-                className={`min-h-[100px] border-b border-r border-slate-100 dark:border-slate-700/50 p-1.5 ${
+                className={`min-h-[82px] border-b border-r border-slate-100 dark:border-slate-700/50 p-1 sm:min-h-[100px] sm:p-1.5 ${
                   day === null
                     ? "bg-slate-50/50 dark:bg-slate-800/50"
                     : "bg-white dark:bg-slate-800"

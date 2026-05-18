@@ -5,10 +5,10 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, CheckSquare, Calendar, FolderOpen, Users,
   Bell, User, Settings, Shield, Zap, ChevronLeft, ChevronRight,
-  BarChart3, Building2,
+  BarChart3, Building2, X,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/index';
-import { toggleSidebar } from '../../store/slices/uiSlice';
+import { setSidebarOpen, toggleSidebar } from '../../store/slices/uiSlice';
 import { useGetProjectsQuery } from '../../services/projectsApi';
 import { getAvatarUrl, onlineStatusConfig } from '../../lib/utils';
 import { cn } from '../../lib/utils';
@@ -42,13 +42,19 @@ export default function Sidebar() {
 
   const isActive = (href: string) =>
     href === '/dashboard' ? pathname === href : pathname.startsWith(href);
+  const closeOnMobile = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      dispatch(setSidebarOpen(false));
+    }
+  };
 
   if (!sidebarOpen) {
     return (
-      <div className="fixed left-0 top-0 h-full w-0 z-30">
+      <div className="fixed left-0 top-0 z-30 hidden h-full w-0 lg:block">
         <button
           onClick={() => dispatch(toggleSidebar())}
           className="absolute top-4 -right-8 w-7 h-7 bg-slate-800 border border-slate-700 rounded-r-lg flex items-center justify-center text-slate-400 hover:text-white"
+          title="Open sidebar"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
@@ -57,23 +63,32 @@ export default function Sidebar() {
   }
 
   return (
-    <aside
-      className="fixed left-0 top-0 h-full z-30 flex flex-col"
-      style={{ width: '240px', background: 'var(--color-sidebar-bg)', borderRight: '1px solid #1e293b' }}
-    >
+    <>
+      <button
+        type="button"
+        aria-label="Close navigation"
+        onClick={() => dispatch(setSidebarOpen(false))}
+        className="fixed inset-0 z-30 bg-slate-950/50 backdrop-blur-[1px] lg:hidden"
+      />
+      <aside
+        className="fixed left-0 top-0 z-40 flex h-full w-[min(82vw,240px)] flex-col bg-slate-900 shadow-2xl shadow-slate-950/30 lg:z-30 lg:w-[240px] lg:shadow-none"
+        style={{ background: 'var(--color-sidebar-bg)', borderRight: '1px solid #1e293b' }}
+      >
       {/* Logo */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-slate-800">
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/dashboard" onClick={closeOnMobile} className="flex items-center gap-2 min-w-0">
           <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
             <Zap className="w-5 h-5 text-white" />
           </div>
-          <span className="font-bold text-white text-base">TaskFlow</span>
+          <span className="font-bold text-white text-base truncate">TaskFlow</span>
         </Link>
         <button
           onClick={() => dispatch(toggleSidebar())}
           className="text-slate-500 hover:text-slate-300 p-1 rounded"
+          title="Close sidebar"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="hidden w-4 h-4 lg:block" />
+          <X className="w-4 h-4 lg:hidden" />
         </button>
       </div>
 
@@ -83,6 +98,7 @@ export default function Sidebar() {
           <Link
             key={href}
             href={href}
+            onClick={closeOnMobile}
             className={cn(
               'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors group',
               isActive(href)
@@ -109,6 +125,7 @@ export default function Sidebar() {
             <Link
               key={project._id}
               href={`/projects/${project._id}`}
+              onClick={closeOnMobile}
               className={cn(
                 'flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm transition-colors',
                 pathname.startsWith(`/projects/${project._id}`)
@@ -125,6 +142,7 @@ export default function Sidebar() {
           )}
           <Link
             href="/projects"
+            onClick={closeOnMobile}
             className="flex items-center gap-3 px-3 py-1.5 rounded-lg text-xs text-slate-600 hover:text-slate-400 transition-colors mt-1"
           >
             <FolderOpen className="w-3 h-3" />
@@ -142,6 +160,7 @@ export default function Sidebar() {
               <Link
                 key={href}
                 href={href}
+                onClick={closeOnMobile}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                   isActive(href)
@@ -165,6 +184,7 @@ export default function Sidebar() {
               <Link
                 key={href}
                 href={href}
+                onClick={closeOnMobile}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                   isActive(href)
@@ -182,7 +202,7 @@ export default function Sidebar() {
 
       {/* User footer */}
       <div className="border-t border-slate-800 p-3">
-        <Link href="/profile" className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+        <Link href="/profile" onClick={closeOnMobile} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-slate-800 transition-colors">
           <div className="relative flex-shrink-0">
             <img
               src={getAvatarUrl(user?.name || 'User', user?.avatar)}
@@ -203,6 +223,7 @@ export default function Sidebar() {
           <User className="w-4 h-4 text-slate-600 flex-shrink-0" />
         </Link>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

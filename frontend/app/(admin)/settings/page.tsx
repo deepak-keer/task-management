@@ -63,14 +63,14 @@ export default function SettingsPage() {
   ] as const;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="mx-auto max-w-4xl space-y-5 sm:space-y-6">
       <div className="flex items-center gap-2">
         <Settings className="w-6 h-6 text-slate-400" />
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Settings</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white sm:text-2xl">Settings</h1>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
+      <div className="flex gap-1 overflow-x-auto border-b border-slate-200 dark:border-slate-700">
         {tabs.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
@@ -90,7 +90,7 @@ export default function SettingsPage() {
       {/* Members tab */}
       {activeTab === 'members' && (
         <div>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="font-semibold text-slate-900 dark:text-white">Workspace Members ({users.length})</h2>
             <Button size="sm" onClick={() => setShowCreateInvite(true)}>
               <Plus className="w-3.5 h-3.5" /> Invite Member
@@ -98,7 +98,7 @@ export default function SettingsPage() {
           </div>
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700">
             {users.map((u) => (
-              <div key={u._id} className="flex items-center gap-3 px-4 py-3">
+              <div key={u._id} className="flex flex-wrap items-center gap-3 px-4 py-3 sm:flex-nowrap">
                 <Avatar name={u.name} avatar={u.avatar} size="sm" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-slate-900 dark:text-white">{u.name}</p>
@@ -115,7 +115,7 @@ export default function SettingsPage() {
       {/* Invites tab */}
       {activeTab === 'invites' && (
         <div>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="font-semibold text-slate-900 dark:text-white">Invite Links</h2>
             <Button size="sm" onClick={() => setShowCreateInvite(true)}>
               <Plus className="w-3.5 h-3.5" /> Create Link
@@ -146,7 +146,7 @@ export default function SettingsPage() {
                       {' · '}Created {formatRelative(invite.createdAt)}
                     </p>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex w-full flex-wrap items-center justify-end gap-1.5 sm:w-auto">
                     {invite.status === 'active' && (
                       <button onClick={() => copyLink(invite.token, invite._id)}
                         className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-slate-700 dark:text-slate-200">
@@ -204,7 +204,7 @@ export default function SettingsPage() {
               <option value="-1">Unlimited</option>
             </select>
           </div>
-          <div className="flex justify-end gap-2 pt-1">
+          <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
             <Button variant="secondary" type="button" onClick={() => setShowCreateInvite(false)}>Cancel</Button>
             <Button type="submit" loading={creating}>Create Link</Button>
           </div>

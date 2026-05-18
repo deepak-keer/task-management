@@ -54,10 +54,10 @@ export default function MyTasksPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto max-w-5xl space-y-5 sm:space-y-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white sm:text-2xl">
             My Tasks
           </h1>
           <p className="text-slate-500 text-sm mt-1">
@@ -67,12 +67,12 @@ export default function MyTasksPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3">
-        <Filter className="w-4 h-4 text-slate-400" />
+      <div className="flex flex-col gap-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <Filter className="hidden w-4 h-4 text-slate-400 sm:block" />
         <select
           value={filterPriority}
           onChange={(e) => setFilterPriority(e.target.value)}
-          className="text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg px-3 py-1.5 border-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg px-3 py-1.5 border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto"
         >
           <option value="">All Priorities</option>
           {PRIORITIES.map((p) => (
@@ -84,7 +84,7 @@ export default function MyTasksPage() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg px-3 py-1.5 border-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg px-3 py-1.5 border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto"
         >
           <option value="">All Statuses</option>
           {STATUSES.map((s) => (
@@ -93,12 +93,12 @@ export default function MyTasksPage() {
             </option>
           ))}
         </select>
-        <div className="flex items-center gap-1 ml-auto">
+        <div className="grid grid-cols-1 gap-2 sm:ml-auto sm:flex sm:items-center sm:gap-1">
           <SortAsc className="w-4 h-4 text-slate-400" />
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-            className="text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg px-3 py-1.5 border-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg px-3 py-1.5 border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto"
           >
             <option value="dueDate">Due Date</option>
             <option value="priority">Priority</option>
@@ -107,7 +107,7 @@ export default function MyTasksPage() {
           <select
             value={groupBy}
             onChange={(e) => setGroupBy(e.target.value as typeof groupBy)}
-            className="text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg px-3 py-1.5 border-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg px-3 py-1.5 border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto"
           >
             <option value="status">Group: Status</option>
             <option value="priority">Group: Priority</option>
@@ -152,13 +152,13 @@ export default function MyTasksPage() {
                   <Link
                     key={task._id}
                     href={`/projects/${projectId}/tasks/${task._id}`}
-                    className="flex items-center gap-4 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                    className="flex flex-wrap items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors sm:flex-nowrap sm:gap-4"
                   >
                     <div
                       className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${task.status === "done" ? "bg-green-500" : isOverdue ? "bg-red-500" : "bg-blue-500"}`}
                     />
                     <span
-                      className={`flex-1 text-sm font-medium truncate ${task.status === "done" ? "line-through text-slate-400" : "text-slate-900 dark:text-white"}`}
+                      className={`min-w-0 flex-1 basis-[calc(100%-2rem)] text-sm font-medium truncate sm:basis-auto ${task.status === "done" ? "line-through text-slate-400" : "text-slate-900 dark:text-white"}`}
                     >
                       {task.title}
                     </span>

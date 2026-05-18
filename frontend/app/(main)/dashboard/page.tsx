@@ -48,11 +48,11 @@ export default function DashboardPage() {
     hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
+    <div className="mx-auto max-w-6xl space-y-6 animate-fade-in sm:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white sm:text-2xl">
             {greeting}, {user?.name?.split(" ")[0]} 👋
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
@@ -72,7 +72,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
         {[
           {
             label: "Due Today",
@@ -105,7 +105,7 @@ export default function DashboardPage() {
         ].map(({ label, value, icon: Icon, color, bg }) => (
           <div
             key={label}
-            className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5"
+            className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 sm:p-5"
           >
             <div
               className={`w-10 h-10 rounded-lg ${bg} flex items-center justify-center mb-3`}
@@ -126,7 +126,7 @@ export default function DashboardPage() {
         {/* Recent Tasks */}
         <div className="lg:col-span-2">
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between gap-3 px-4 py-4 border-b border-slate-200 dark:border-slate-700 sm:px-5">
               <h2 className="font-semibold text-slate-900 dark:text-white">
                 My Tasks
               </h2>
@@ -149,7 +149,7 @@ export default function DashboardPage() {
                   <Link
                     key={task._id}
                     href={`/projects/${typeof task.project === "string" ? task.project : (task.project as { _id: string })._id}/tasks/${task._id}`}
-                    className="flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                    className="flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors sm:px-5"
                   >
                     <div
                       className={`w-2 h-2 rounded-full flex-shrink-0 ${task.status === "done" ? "bg-green-500" : "bg-blue-500"}`}
@@ -185,7 +185,7 @@ export default function DashboardPage() {
         {/* Projects */}
         <div>
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between gap-3 px-4 py-4 border-b border-slate-200 dark:border-slate-700 sm:px-5">
               <h2 className="font-semibold text-slate-900 dark:text-white">
                 Projects
               </h2>

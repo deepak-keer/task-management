@@ -1,8 +1,8 @@
 'use client';
 
-import { Bell, Search, LogOut } from 'lucide-react';
+import { Bell, Menu, Search, LogOut } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/index';
-import { toggleCommandPalette } from '../../store/slices/uiSlice';
+import { setSidebarOpen, toggleCommandPalette } from '../../store/slices/uiSlice';
 import { logout } from '../../store/slices/authSlice';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -19,18 +19,27 @@ export default function Header() {
   };
 
   return (
-    <header className="h-14 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center px-4 gap-3 flex-shrink-0 sticky top-0 z-20">
+    <header className="h-14 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center px-3 sm:px-4 gap-2 sm:gap-3 flex-shrink-0 sticky top-0 z-20">
+      <button
+        type="button"
+        onClick={() => dispatch(setSidebarOpen(true))}
+        className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors lg:hidden"
+        title="Open navigation"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
       {/* Search trigger */}
       <button
         onClick={() => dispatch(toggleCommandPalette())}
-        className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-lg text-sm transition-colors flex-1 max-w-xs"
+        className="flex min-w-0 items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-lg text-sm transition-colors flex-1 sm:max-w-xs"
       >
-        <Search className="w-4 h-4" />
-        <span>Search…</span>
-        <span className="ml-auto text-xs text-slate-400 font-mono">⌘K</span>
+        <Search className="w-4 h-4 flex-shrink-0" />
+        <span className="truncate">Search...</span>
+        <span className="ml-auto hidden text-xs text-slate-400 font-mono sm:inline">Cmd K</span>
       </button>
 
-      <div className="flex-1" />
+      <div className="hidden flex-1 sm:block" />
 
       {/* Notifications */}
       <Link

@@ -1,30 +1,37 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppSelector } from '../../store/index';
+import { cn } from '../../lib/utils';
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
 import CommandPalette from '../../components/shared/CommandPalette';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const { isAuthenticated, user } = useAppSelector((s) => s.auth);
   const sidebarOpen = useAppSelector((s) => s.ui.sidebarOpen);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     if (!isAuthenticated) { router.replace('/login'); return; }
     if (user && user.role !== 'admin' && user.role !== 'super_admin') router.replace('/dashboard');
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, mounted, user, router]);
 
-  if (!isAuthenticated || !user) return null;
+  if (!mounted || !isAuthenticated || !user) return null;
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-900">
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 transition-all duration-200" style={{ marginLeft: sidebarOpen ? '240px' : '0' }}>
+      <div className={cn('flex-1 flex flex-col min-w-0 transition-[margin] duration-200', sidebarOpen && 'lg:ml-[240px]')}>
         <Header />
-        <main className="flex-1 overflow-auto p-6">{children}</main>
+        <main className="flex-1 overflow-auto p-4 sm:p-5 lg:p-6">{children}</main>
       </div>
       <CommandPalette />
     </div>

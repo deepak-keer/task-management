@@ -117,9 +117,9 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="mx-auto max-w-2xl space-y-5 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white sm:text-2xl">
           Profile
         </h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -128,7 +128,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Profile info */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-5">
           <User className="w-4 h-4 text-slate-400" />
           <h2 className="font-semibold text-slate-900 dark:text-white">
@@ -136,7 +136,7 @@ export default function ProfilePage() {
           </h2>
         </div>
 
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex flex-col items-start gap-4 mb-6 sm:flex-row sm:items-center">
           <Avatar
             name={profile.name || user.name}
             avatar={profile.avatar || user.avatar}
@@ -181,7 +181,7 @@ export default function ProfilePage() {
               className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-500 cursor-not-allowed"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                 Online Status
@@ -222,7 +222,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="flex justify-end mt-5">
+        <div className="flex justify-stretch mt-5 sm:justify-end">
           <Button onClick={handleSaveProfile} loading={saving}>
             Save Changes
           </Button>
@@ -230,7 +230,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Notification prefs */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-5">
           <Bell className="w-4 h-4 text-slate-400" />
           <h2 className="font-semibold text-slate-900 dark:text-white">
@@ -245,8 +245,8 @@ export default function ProfilePage() {
             { key: "mentioned", label: "Mentioned in a comment" },
             { key: "dueDateReminder", label: "Due date reminders" },
           ].map(({ key, label }) => (
-            <div key={key} className="flex items-center justify-between py-2">
-              <span className="text-sm text-slate-700 dark:text-slate-300">
+            <div key={key} className="flex items-center justify-between gap-4 py-2">
+              <span className="min-w-0 text-sm text-slate-700 dark:text-slate-300">
                 {label}
               </span>
               <button
@@ -267,7 +267,7 @@ export default function ProfilePage() {
           ))}
         </div>
 
-        <div className="flex justify-end mt-4">
+        <div className="flex justify-stretch mt-4 sm:justify-end">
           <Button onClick={handleSaveNotifs} variant="secondary">
             Save Preferences
           </Button>
@@ -275,7 +275,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Change password */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-5">
           <Lock className="w-4 h-4 text-slate-400" />
           <h2 className="font-semibold text-slate-900 dark:text-white">
@@ -320,7 +320,7 @@ export default function ProfilePage() {
             </div>
           ))}
 
-          <div className="flex justify-end pt-1">
+          <div className="flex justify-stretch pt-1 sm:justify-end">
             <Button type="submit" loading={changingPwd} variant="secondary">
               Change Password
             </Button>

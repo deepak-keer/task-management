@@ -125,14 +125,14 @@ export function Modal({
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-      <div className={cn('relative w-full bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 animate-scale-in', sizeMap[size])}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h2>
+      <div className={cn('relative max-h-[calc(100vh-2rem)] w-full overflow-hidden bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 animate-scale-in', sizeMap[size])}>
+        <div className="flex items-center justify-between gap-3 px-4 py-4 border-b border-slate-200 dark:border-slate-700 sm:px-6">
+          <h2 className="min-w-0 truncate text-lg font-semibold text-slate-900 dark:text-white">{title}</h2>
           <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="p-6">{children}</div>
+        <div className="max-h-[calc(100vh-6.5rem)] overflow-y-auto p-4 sm:p-6">{children}</div>
       </div>
     </div>
   );

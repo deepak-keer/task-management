@@ -142,11 +142,11 @@ export default function BoardPage() {
   if (!project) return <div className="text-center py-20 text-slate-500">Project not found.</div>;
 
   return (
-    <div className="flex flex-col h-full -m-6">
+    <div className="flex h-full flex-col -m-4 sm:-m-5 lg:-m-6">
       {/* Board header */}
-      <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0">
-        <div className="flex-1">
-          <h1 className="text-lg font-bold text-slate-900 dark:text-white">{project.name}</h1>
+      <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900 sm:px-5 lg:px-6 lg:py-4">
+        <div className="min-w-0 flex-1 basis-full sm:basis-auto">
+          <h1 className="truncate text-lg font-bold text-slate-900 dark:text-white">{project.name}</h1>
         </div>
 
         {/* Online presence */}
@@ -159,11 +159,11 @@ export default function BoardPage() {
         </div>
 
         {/* Filters */}
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <select
             value={activeFilters.priority || ''}
             onChange={(e) => dispatch(setFilter({ priority: e.target.value || null }))}
-            className="text-xs bg-slate-100 dark:bg-slate-800 border-0 rounded-lg px-2.5 py-1.5 text-slate-600 dark:text-slate-300 focus:outline-none"
+            className="max-w-[140px] text-xs bg-slate-100 dark:bg-slate-800 border-0 rounded-lg px-2.5 py-1.5 text-slate-600 dark:text-slate-300 focus:outline-none"
           >
             <option value="">Priority</option>
             {['urgent', 'high', 'medium', 'low'].map((p) => <option key={p} value={p}>{p}</option>)}
@@ -193,7 +193,7 @@ export default function BoardPage() {
       {boardView === 'kanban' ? (
         <div className="flex-1 overflow-x-auto overflow-y-hidden">
           <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-            <div className="flex gap-4 p-6 h-full" style={{ minWidth: visibleColumns.length * 280 + 'px' }}>
+            <div className="flex h-full gap-4 p-4 sm:p-5 lg:p-6" style={{ minWidth: visibleColumns.length * 280 + 'px' }}>
               {visibleColumns.map((col) => {
                 const colTasks = getFilteredTasksForColumn(col.id);
                 return (
@@ -216,16 +216,16 @@ export default function BoardPage() {
           </DndContext>
         </div>
       ) : (
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-4 sm:p-5 lg:p-6">
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700">
             {Object.values(tasks).map((task) => (
               <Link
                 key={task._id}
                 href={`/projects/${projectId}/tasks/${task._id}`}
-                className="flex items-center gap-4 px-4 py-3 hover:bg-slate-50 focus:bg-slate-50 focus:outline-none dark:hover:bg-slate-700/50 dark:focus:bg-slate-700/50 transition-colors"
+                className="flex flex-wrap items-center gap-3 px-4 py-3 hover:bg-slate-50 focus:bg-slate-50 focus:outline-none dark:hover:bg-slate-700/50 dark:focus:bg-slate-700/50 transition-colors sm:flex-nowrap sm:gap-4"
               >
-                <span className="text-sm text-slate-400 w-20 flex-shrink-0 capitalize">{task.column.replace('_', ' ')}</span>
-                <span className="flex-1 text-sm font-medium text-slate-900 dark:text-white truncate">{task.title}</span>
+                <span className="w-20 flex-shrink-0 text-sm capitalize text-slate-400">{task.column.replace('_', ' ')}</span>
+                <span className="min-w-0 flex-1 basis-[calc(100%-6rem)] truncate text-sm font-medium text-slate-900 dark:text-white sm:basis-auto">{task.title}</span>
                 {task.assignee && <Avatar name={task.assignee.name} avatar={task.assignee.avatar} size="xs" />}
                 {task.dueDate && <span className="text-xs text-slate-400">{new Date(task.dueDate).toLocaleDateString()}</span>}
               </Link>

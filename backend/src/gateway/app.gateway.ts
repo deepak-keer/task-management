@@ -19,9 +19,16 @@ interface AuthenticatedSocket extends Socket {
   userRole?: string;
 }
 
+const allowedOrigins = (
+  process.env.FRONTEND_URL || 'http://localhost:3000,https://task-management-karmyug.vercel.app'
+)
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 @WebSocketGateway({
   cors: {
-    origin: process.env.FRONTEND_URL || 'https://task-management-karmyug.vercel.app',
+    origin: allowedOrigins,
     credentials: true,
   },
 })

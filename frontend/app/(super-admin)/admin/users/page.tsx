@@ -91,16 +91,16 @@ export default function AdminUsersPage() {
   const displayUsers = activeTab === 'pending' ? pending : users;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto max-w-6xl space-y-5 sm:space-y-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">User Management</h1>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white sm:text-2xl">User Management</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{usersData?.total ?? 0} total users</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
+      <div className="flex gap-1 overflow-x-auto border-b border-slate-200 dark:border-slate-700">
         <button onClick={() => setActiveTab('all')}
           className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === 'all' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           <Users className="w-4 h-4" /> All Users
@@ -116,21 +116,21 @@ export default function AdminUsersPage() {
 
       {/* Filters (all tab only) */}
       {activeTab === 'all' && (
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-48">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+          <div className="relative min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input type="text" placeholder="Search by name or email…" value={search} onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto">
             <option value="">All Roles</option>
             <option value="super_admin">Super Admin</option>
             <option value="admin">Admin</option>
             <option value="member">Member</option>
           </select>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto">
             <option value="">All Statuses</option>
             <option value="active">Active</option>
             <option value="pending">Pending</option>
@@ -140,10 +140,61 @@ export default function AdminUsersPage() {
         </div>
       )}
 
+      <div className="space-y-3 md:hidden">
+        {isLoading && Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+            <Skeleton className="h-5 w-2/3" />
+            <Skeleton className="mt-3 h-4 w-full" />
+          </div>
+        ))}
+        {!isLoading && displayUsers.map((u) => {
+          const actionPending = isUserActionPending(u._id);
+          return (
+            <div key={u._id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+              <div className="flex items-start gap-3">
+                <Avatar name={u.name} avatar={u.avatar} size="sm" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-slate-900 dark:text-white">{u.name}</p>
+                  <p className="truncate text-xs text-slate-500">{u.email}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <RoleBadge role={u.role} />
+                    <StatusBadge status={u.status} />
+                  </div>
+                  <p className="mt-3 text-xs text-slate-500">Joined {formatRelative(u.createdAt)}</p>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap justify-end gap-2">
+                {u.status === 'pending' && (
+                  <>
+                    <button onClick={() => handleApprove(u._id)} disabled={actionPending} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-green-600 hover:bg-green-50 disabled:opacity-50 dark:hover:bg-green-900/20"><CheckCircle className="h-4 w-4" /> Approve</button>
+                    <button onClick={() => handleReject(u._id)} disabled={actionPending} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-900/20"><XCircle className="h-4 w-4" /> Reject</button>
+                  </>
+                )}
+                {u.status === 'active' && u.role !== 'super_admin' && (
+                  <button onClick={() => handleBan(u._id)} disabled={actionPending} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-orange-500 hover:bg-orange-50 disabled:opacity-50 dark:hover:bg-orange-900/20"><ShieldBan className="h-4 w-4" /> Ban</button>
+                )}
+                {u.status === 'banned' && (
+                  <button onClick={() => handleUnban(u._id)} disabled={actionPending} className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-green-600 hover:bg-green-50 disabled:opacity-50 dark:hover:bg-green-900/20">Unban</button>
+                )}
+                {u.role !== 'super_admin' && (
+                  <button onClick={() => handleDelete(u._id)} disabled={actionPending} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-500 hover:bg-red-50 hover:text-red-500 disabled:opacity-50 dark:hover:bg-red-900/20"><Trash2 className="h-4 w-4" /> Delete</button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        {!isLoading && displayUsers.length === 0 && (
+          <div className="rounded-xl border border-slate-200 bg-white py-12 text-center text-slate-500 dark:border-slate-700 dark:bg-slate-800">
+            <Users className="mx-auto mb-2 h-8 w-8 text-slate-300" />
+            <p className="text-sm">{activeTab === 'pending' ? 'No pending approvals' : 'No users found'}</p>
+          </div>
+        )}
+      </div>
+
       {/* Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className="hidden bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden md:block">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[760px] text-sm">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50">
                 <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">User</th>

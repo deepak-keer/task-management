@@ -1,6 +1,4 @@
 {
-  "/(main)/dashboard/page": "app/(main)/dashboard/page.js",
-  "/(main)/notifications/page": "app/(main)/notifications/page.js",
-  "/(admin)/settings/page": "app/(admin)/settings/page.js",
-  "/(main)/projects/page": "app/(main)/projects/page.js"
+  "/(super-admin)/admin/stats/page": "app/(super-admin)/admin/stats/page.js",
+  "/(main)/my-tasks/page": "app/(main)/my-tasks/page.js"
 }

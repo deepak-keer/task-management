@@ -19,5 +19,7 @@
     "noUnusedParameters": false,
     "strictPropertyInitialization": false,
     "forceConsistentCasingInFileNames": false
-  }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

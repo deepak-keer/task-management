@@ -110,6 +110,7 @@ let SuperAdminService = class SuperAdminService {
             .exec();
         if (!updated)
             throw new common_1.NotFoundException('User not found');
+        this.appGateway.forceLogoutUser(id, 'user-banned', { userId: id });
         return updated;
     }
     async unbanUser(id) {

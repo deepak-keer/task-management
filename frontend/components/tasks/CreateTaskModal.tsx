@@ -74,7 +74,7 @@ export default function CreateTaskModal({ projectId, defaultColumn, columns, mem
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Column</label>
             <select value={form.column} onChange={(e) => setForm({ ...form, column: e.target.value })}
@@ -91,7 +91,7 @@ export default function CreateTaskModal({ projectId, defaultColumn, columns, mem
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Assignee</label>
             {isMember ? (
@@ -113,7 +113,7 @@ export default function CreateTaskModal({ projectId, defaultColumn, columns, mem
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
           <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
           <Button type="submit" loading={isLoading}>Create Task</Button>
         </div>
