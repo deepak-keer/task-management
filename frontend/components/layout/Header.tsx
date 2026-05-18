@@ -6,6 +6,7 @@ import { setSidebarOpen, toggleCommandPalette } from '../../store/slices/uiSlice
 import { logout } from '../../store/slices/authSlice';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import InstallAppButton from '../pwa/InstallAppButton';
 
 export default function Header() {
   const dispatch = useAppDispatch();
@@ -40,6 +41,8 @@ export default function Header() {
       </button>
 
       <div className="hidden flex-1 sm:block" />
+
+      <InstallAppButton />
 
       {/* Notifications */}
       <Link
