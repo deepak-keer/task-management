@@ -1,7 +1,3 @@
 {
-  "/(super-admin)/admin/stats/page": "app/(super-admin)/admin/stats/page.js",
-  "/(main)/dashboard/page": "app/(main)/dashboard/page.js",
-  "/(super-admin)/admin/workspaces/page": "app/(super-admin)/admin/workspaces/page.js",
-  "/(main)/projects/page": "app/(main)/projects/page.js",
-  "/(super-admin)/admin/users/page": "app/(super-admin)/admin/users/page.js"
+  "/(main)/projects/[id]/page": "app/(main)/projects/[id]/page.js"
 }
