@@ -45,6 +45,61 @@ export class ProjectsController {
     return this.projectsService.update(id, body, req.user);
   }
 
+  @Post(':id/columns')
+  addColumn(
+    @Param('id') id: string,
+    @Body() body: { name: string; color?: string },
+    @Request() req: { user: UserDocument },
+  ) {
+    return this.projectsService.addColumn(id, body, req.user);
+  }
+
+  @Patch(':id/columns/reorder')
+  reorderColumns(
+    @Param('id') id: string,
+    @Body() body: { columnIds: string[] },
+    @Request() req: { user: UserDocument },
+  ) {
+    return this.projectsService.reorderColumns(id, body.columnIds, req.user);
+  }
+
+  @Patch(':id/columns/:columnId')
+  updateColumn(
+    @Param('id') id: string,
+    @Param('columnId') columnId: string,
+    @Body() body: { name?: string; color?: string },
+    @Request() req: { user: UserDocument },
+  ) {
+    return this.projectsService.updateColumn(id, columnId, body, req.user);
+  }
+
+  @Patch(':id/columns/:columnId/archive')
+  archiveColumn(
+    @Param('id') id: string,
+    @Param('columnId') columnId: string,
+    @Request() req: { user: UserDocument },
+  ) {
+    return this.projectsService.archiveColumn(id, columnId, req.user);
+  }
+
+  @Patch(':id/columns/:columnId/restore')
+  restoreColumn(
+    @Param('id') id: string,
+    @Param('columnId') columnId: string,
+    @Request() req: { user: UserDocument },
+  ) {
+    return this.projectsService.restoreColumn(id, columnId, req.user);
+  }
+
+  @Delete(':id/columns/:columnId')
+  deleteColumn(
+    @Param('id') id: string,
+    @Param('columnId') columnId: string,
+    @Request() req: { user: UserDocument },
+  ) {
+    return this.projectsService.deleteColumn(id, columnId, req.user);
+  }
+
   @Patch(':id/archive')
   archive(@Param('id') id: string, @Request() req: { user: UserDocument }) {
     return this.projectsService.archive(id, req.user);

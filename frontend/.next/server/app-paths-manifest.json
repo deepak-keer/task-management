@@ -1,21 +1,7 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/(auth)/login/page": "app/(auth)/login/page.js",
-  "/invalid-invite/page": "app/invalid-invite/page.js",
-  "/page": "app/page.js",
-  "/(auth)/register/page": "app/(auth)/register/page.js",
-  "/(admin)/settings/page": "app/(admin)/settings/page.js",
-  "/(main)/calendar/page": "app/(main)/calendar/page.js",
-  "/(main)/dashboard/page": "app/(main)/dashboard/page.js",
-  "/(main)/my-tasks/page": "app/(main)/my-tasks/page.js",
-  "/(main)/projects/[id]/page": "app/(main)/projects/[id]/page.js",
-  "/(main)/profile/page": "app/(main)/profile/page.js",
-  "/(main)/notifications/page": "app/(main)/notifications/page.js",
-  "/(main)/projects/page": "app/(main)/projects/page.js",
-  "/(main)/team/page": "app/(main)/team/page.js",
-  "/(main)/projects/[id]/tasks/[taskId]/page": "app/(main)/projects/[id]/tasks/[taskId]/page.js",
   "/(super-admin)/admin/stats/page": "app/(super-admin)/admin/stats/page.js",
+  "/(main)/dashboard/page": "app/(main)/dashboard/page.js",
   "/(super-admin)/admin/workspaces/page": "app/(super-admin)/admin/workspaces/page.js",
-  "/(super-admin)/admin/users/page": "app/(super-admin)/admin/users/page.js",
-  "/(super-admin)/admin/permissions/page": "app/(super-admin)/admin/permissions/page.js"
+  "/(main)/projects/page": "app/(main)/projects/page.js",
+  "/(super-admin)/admin/users/page": "app/(super-admin)/admin/users/page.js"
 }

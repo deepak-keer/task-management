@@ -8,6 +8,11 @@ export declare class ProjectsService {
     private taskModel;
     private appGateway;
     constructor(projectModel: Model<ProjectDocument>, taskModel: Model<TaskDocument>, appGateway: AppGateway);
+    private canManageColumns;
+    private normalizeColumns;
+    private ensureColumns;
+    private getProjectForColumnUpdate;
+    private saveColumns;
     findAll(user: UserDocument): Promise<ProjectDocument[]>;
     findById(id: string, user: UserDocument): Promise<ProjectDocument>;
     create(data: {
@@ -19,6 +24,18 @@ export declare class ProjectsService {
         description: string;
         columns: unknown[];
     }>, user: UserDocument): Promise<ProjectDocument>;
+    addColumn(projectId: string, data: {
+        name: string;
+        color?: string;
+    }, user: UserDocument): Promise<ProjectDocument>;
+    updateColumn(projectId: string, columnId: string, data: {
+        name?: string;
+        color?: string;
+    }, user: UserDocument): Promise<ProjectDocument>;
+    deleteColumn(projectId: string, columnId: string, user: UserDocument): Promise<ProjectDocument>;
+    archiveColumn(projectId: string, columnId: string, user: UserDocument): Promise<ProjectDocument>;
+    restoreColumn(projectId: string, columnId: string, user: UserDocument): Promise<ProjectDocument>;
+    reorderColumns(projectId: string, columnIds: string[], user: UserDocument): Promise<ProjectDocument>;
     archive(id: string, user: UserDocument): Promise<ProjectDocument>;
     delete(id: string, user: UserDocument): Promise<void>;
     addMember(projectId: string, userId: string, requester: UserDocument): Promise<ProjectDocument>;

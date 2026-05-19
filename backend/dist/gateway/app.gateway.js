@@ -20,7 +20,7 @@ const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
 const user_schema_1 = require("../users/user.schema");
-const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000,https://task-management-karmyug.vercel.app')
+const allowedOrigins = (process.env.FRONTEND_URL || 'https://task-management-karmyug.vercel.app,https://task-management-karmyug.vercel.app')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);

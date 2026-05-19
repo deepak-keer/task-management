@@ -27,7 +27,7 @@ export interface TaskCard {
     performedAt: string | Date;
     meta: Record<string, unknown>;
   }>;
-  project: string | { _id: string; name: string };
+  project: string | { _id: string; name: string; columns?: BoardColumn[] };
   createdAt: string;
   updatedAt: string;
   _commentCount?: number;
@@ -38,6 +38,7 @@ export interface BoardColumn {
   name: string;
   order: number;
   color: string;
+  archived?: boolean;
 }
 
 interface BoardState {

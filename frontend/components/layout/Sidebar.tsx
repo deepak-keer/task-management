@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, CheckSquare, Calendar, FolderOpen, Users,
   Bell, User, Settings, Shield, Zap, ChevronLeft, ChevronRight,
-  BarChart3, Building2, X,
+  BarChart3, Building2, Columns3, X,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/index';
 import { setSidebarOpen, toggleSidebar } from '../../store/slices/uiSlice';
@@ -28,6 +28,7 @@ const adminItems = [
 const superAdminItems = [
   { href: '/admin/users', icon: Users, label: 'Users' },
   { href: '/admin/workspaces', icon: Building2, label: 'Workspaces' },
+  { href: '/admin/columns', icon: Columns3, label: 'Columns' },
   { href: '/admin/permissions', icon: Shield, label: 'Permissions' },
   { href: '/admin/stats', icon: BarChart3, label: 'Analytics' },
 ];

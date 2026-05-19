@@ -24,6 +24,7 @@ export class Project {
         name: String,
         order: Number,
         color: { type: String, default: '#6366f1' },
+        archived: { type: Boolean, default: false },
       },
     ],
     default: [
@@ -33,7 +34,7 @@ export class Project {
       { id: 'done', name: 'Done', order: 3, color: '#22c55e' },
     ],
   })
-  columns: Array<{ id: string; name: string; order: number; color: string }>;
+  columns: Array<{ id: string; name: string; order: number; color: string; archived?: boolean }>;
 
   @Prop({ default: false })
   isArchived: boolean;

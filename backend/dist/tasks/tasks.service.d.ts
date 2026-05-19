@@ -18,6 +18,7 @@ export declare class TasksService {
     private isAssignedTo;
     private canManageTaskDetails;
     private ensureAssigneeCanSeeProject;
+    private ensureActiveProjectColumn;
     private getObjectIdString;
     private getTaskNotificationRecipients;
     private notifyTaskParticipants;

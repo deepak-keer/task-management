@@ -21,6 +21,7 @@ import {
   FolderOpen,
   Users,
   Plus,
+  Columns3,
 } from "lucide-react";
 import Link from "next/link";
 import { usePermission } from "../../../hooks/usePermission";
@@ -39,9 +40,51 @@ export default function DashboardPage() {
     const today = new Date();
     return d.toDateString() === today.toDateString();
   });
-  const inProgress = myTasks.filter(
-    (t) => t.status === "in_progress" || t.column === "in_progress",
+
+  const getTaskProjectId = (task: (typeof myTasks)[number]) =>
+    typeof task.project === "string" ? task.project : task.project?._id;
+
+  const projectById = new Map(projects.map((project) => [project._id, project]));
+  const columnByProjectAndId = new Map<string, { name: string; color: string; archived?: boolean }>();
+
+  projects.forEach((project) => {
+    project.columns?.forEach((column) => {
+      columnByProjectAndId.set(`${project._id}:${column.id}`, column);
+    });
+  });
+
+  myTasks.forEach((task) => {
+    if (typeof task.project !== "string") {
+      const taskProject = task.project;
+      taskProject.columns?.forEach((column) => {
+        columnByProjectAndId.set(`${taskProject._id}:${column.id}`, column);
+      });
+    }
+  });
+
+  const columnStats = myTasks.reduce<Array<{ key: string; name: string; color: string; count: number }>>(
+    (acc, task) => {
+      const projectId = getTaskProjectId(task);
+      const column = projectId ? columnByProjectAndId.get(`${projectId}:${task.column}`) : undefined;
+      const name = column?.name || task.column.replace(/_/g, " ");
+      const color = column?.color || "#3b82f6";
+      const key = `${projectId || "unknown"}:${task.column}`;
+      const existing = acc.find((item) => item.key === key);
+
+      if (existing) existing.count += 1;
+      else acc.push({ key, name, color, count: 1 });
+
+      return acc;
+    },
+    [],
   );
+
+  const activeTasks = myTasks.filter((task) => {
+    const projectId = getTaskProjectId(task);
+    const project = projectId ? projectById.get(projectId) : undefined;
+    const doneColumn = project?.columns?.find((column) => /done|complete/i.test(column.name));
+    return task.column !== doneColumn?.id && task.status !== "done";
+  });
 
   const hour = new Date().getHours();
   const greeting =
@@ -60,6 +103,14 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          {user?.role === "super_admin" && (
+            <Link
+              href="/admin/columns"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 text-sm font-medium rounded-lg transition-colors"
+            >
+              <Columns3 className="w-4 h-4" /> Manage Columns
+            </Link>
+          )}
           {canCreateProject && (
             <Link
               href="/projects"
@@ -89,8 +140,8 @@ export default function DashboardPage() {
             bg: "bg-red-50 dark:bg-red-900/20",
           },
           {
-            label: "In Progress",
-            value: inProgress.length,
+            label: "Active Tasks",
+            value: activeTasks.length,
             icon: CheckSquare,
             color: "text-yellow-600",
             bg: "bg-yellow-50 dark:bg-yellow-900/20",
@@ -120,6 +171,39 @@ export default function DashboardPage() {
             </p>
           </div>
         ))}
+      </div>
+
+      {/* Dynamic columns */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+        <div className="flex items-center justify-between gap-3 px-4 py-4 border-b border-slate-200 dark:border-slate-700 sm:px-5">
+          <h2 className="font-semibold text-slate-900 dark:text-white">
+            My Tasks by Column
+          </h2>
+          {user?.role === "super_admin" && (
+            <Link href="/admin/columns" className="text-sm text-blue-600 hover:text-blue-500">
+              Manage →
+            </Link>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 lg:grid-cols-4">
+          {columnStats.length > 0 ? (
+            columnStats.map((column) => (
+              <div key={column.key} className="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: column.color }} />
+                  <span className="min-w-0 truncate text-sm font-medium capitalize text-slate-700 dark:text-slate-200">
+                    {column.name}
+                  </span>
+                </div>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{column.count}</p>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-full text-sm text-slate-500 dark:text-slate-400">
+              Assigned tasks will appear here grouped by their project columns.
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -39,6 +39,7 @@ __decorate([
                 name: String,
                 order: Number,
                 color: { type: String, default: '#6366f1' },
+                archived: { type: Boolean, default: false },
             },
         ],
         default: [

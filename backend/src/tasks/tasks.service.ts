@@ -57,6 +57,16 @@ export class TasksService {
     );
   }
 
+  private async ensureActiveProjectColumn(projectId: Types.ObjectId | string, columnId: string): Promise<void> {
+    const project = await this.projectModel.findById(projectId).select('columns').exec();
+    if (!project) throw new NotFoundException('Project not found');
+
+    const column = project.columns?.find((item) => item.id === columnId);
+    if (!column || column.archived) {
+      throw new ForbiddenException('Column is not available');
+    }
+  }
+
   private getObjectIdString(value: unknown): string | null {
     if (!value) return null;
     if (value instanceof Types.ObjectId) return value.toString();
@@ -131,7 +141,7 @@ export class TasksService {
   async findMyTasks(userId: string): Promise<TaskDocument[]> {
     return this.taskModel
       .find({ assignee: new Types.ObjectId(userId) })
-      .populate('project', 'name')
+      .populate('project', 'name columns')
       .populate('assignee', 'name email avatar')
       .sort({ dueDate: 1, priority: 1 })
       .exec();
@@ -144,7 +154,7 @@ export class TasksService {
         dueDate: { $lt: new Date() },
         status: { $ne: 'done' },
       })
-      .populate('project', 'name')
+      .populate('project', 'name columns')
       .exec();
   }
 
@@ -193,6 +203,8 @@ export class TasksService {
       .findOne({ project: new Types.ObjectId(data.projectId), column: data.column })
       .sort({ order: -1 })
       .exec();
+
+    await this.ensureActiveProjectColumn(data.projectId, data.column);
 
     const order = lastTask ? lastTask.order + 1 : 0;
     const assigneeId = user.role === 'member' ? user._id.toString() : data.assigneeId;
@@ -267,6 +279,10 @@ export class TasksService {
   ): Promise<TaskDocument> {
     const task = await this.taskModel.findById(id).exec();
     if (!task) throw new NotFoundException('Task not found');
+
+    if (data.column) {
+      await this.ensureActiveProjectColumn(task.project, data.column);
+    }
     const changedFields = Object.keys(data);
     const statusOnlyFields = ['status', 'column'];
     const isStatusOnlyUpdate =

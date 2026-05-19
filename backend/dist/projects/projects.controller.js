@@ -32,6 +32,24 @@ let ProjectsController = class ProjectsController {
     update(id, body, req) {
         return this.projectsService.update(id, body, req.user);
     }
+    addColumn(id, body, req) {
+        return this.projectsService.addColumn(id, body, req.user);
+    }
+    reorderColumns(id, body, req) {
+        return this.projectsService.reorderColumns(id, body.columnIds, req.user);
+    }
+    updateColumn(id, columnId, body, req) {
+        return this.projectsService.updateColumn(id, columnId, body, req.user);
+    }
+    archiveColumn(id, columnId, req) {
+        return this.projectsService.archiveColumn(id, columnId, req.user);
+    }
+    restoreColumn(id, columnId, req) {
+        return this.projectsService.restoreColumn(id, columnId, req.user);
+    }
+    deleteColumn(id, columnId, req) {
+        return this.projectsService.deleteColumn(id, columnId, req.user);
+    }
     archive(id, req) {
         return this.projectsService.archive(id, req.user);
     }
@@ -78,6 +96,61 @@ __decorate([
     __metadata("design:paramtypes", [String, Object, Object]),
     __metadata("design:returntype", void 0)
 ], ProjectsController.prototype, "update", null);
+__decorate([
+    (0, common_1.Post)(':id/columns'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], ProjectsController.prototype, "addColumn", null);
+__decorate([
+    (0, common_1.Patch)(':id/columns/reorder'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], ProjectsController.prototype, "reorderColumns", null);
+__decorate([
+    (0, common_1.Patch)(':id/columns/:columnId'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Param)('columnId')),
+    __param(2, (0, common_1.Body)()),
+    __param(3, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], ProjectsController.prototype, "updateColumn", null);
+__decorate([
+    (0, common_1.Patch)(':id/columns/:columnId/archive'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Param)('columnId')),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", void 0)
+], ProjectsController.prototype, "archiveColumn", null);
+__decorate([
+    (0, common_1.Patch)(':id/columns/:columnId/restore'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Param)('columnId')),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", void 0)
+], ProjectsController.prototype, "restoreColumn", null);
+__decorate([
+    (0, common_1.Delete)(':id/columns/:columnId'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Param)('columnId')),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", void 0)
+], ProjectsController.prototype, "deleteColumn", null);
 __decorate([
     (0, common_1.Patch)(':id/archive'),
     __param(0, (0, common_1.Param)('id')),

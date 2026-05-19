@@ -58,7 +58,7 @@ MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/taskmanager
 JWT_SECRET=change-this-to-a-long-random-string
 JWT_EXPIRES_IN=7d
 PORT=3001
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=https://task-management-karmyug.vercel.app
 ```
 
 **Frontend** — copy `.env.example` to `.env.local`:
@@ -93,7 +93,7 @@ cd backend && npm run start:dev
 cd frontend && npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open [https://task-management-karmyug.vercel.app](https://task-management-karmyug.vercel.app)
 
 ---
 

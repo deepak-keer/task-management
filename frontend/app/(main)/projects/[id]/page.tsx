@@ -7,26 +7,34 @@ import {
   PointerSensor, useSensor, useSensors, closestCorners,
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { useGetProjectQuery } from '../../../../services/projectsApi';
+import {
+  useAddProjectColumnMutation,
+  useArchiveProjectColumnMutation,
+  useDeleteProjectColumnMutation,
+  useGetProjectQuery,
+  useReorderProjectColumnsMutation,
+  useRestoreProjectColumnMutation,
+  useUpdateProjectColumnMutation,
+} from '../../../../services/projectsApi';
 import { useGetTasksQuery, useCreateTaskMutation, useMoveTaskMutation } from '../../../../services/tasksApi';
 import { useAppDispatch, useAppSelector } from '../../../../store/index';
-import { setBoard, optimisticMoveTask, confirmMove, rollbackMove } from '../../../../store/slices/boardSlice';
+import { setBoard, optimisticMoveTask, confirmMove, rollbackMove, type BoardColumn } from '../../../../store/slices/boardSlice';
 import { setBoardView, setFilter } from '../../../../store/slices/uiSlice';
 import { useJoinBoard } from '../../../../hooks/useSocket';
 import { usePermission } from '../../../../hooks/usePermission';
 import KanbanColumn from '../../../../components/board/KanbanColumn';
 import TaskCard from '../../../../components/board/TaskCard';
 import CreateTaskModal from '../../../../components/tasks/CreateTaskModal';
-import { Avatar, SkeletonCard, Button } from '../../../../components/ui/index';
-import { LayoutGrid, List, Plus, Filter } from 'lucide-react';
+import { Avatar, SkeletonCard, Button, Modal } from '../../../../components/ui/index';
+import { LayoutGrid, List, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 
-const DEFAULT_COLUMNS = [
-  { id: 'todo', name: 'To Do', order: 0, color: '#64748b' },
-  { id: 'in_progress', name: 'In Progress', order: 1, color: '#3b82f6' },
-  { id: 'in_review', name: 'In Review', order: 2, color: '#f59e0b' },
-  { id: 'done', name: 'Done', order: 3, color: '#22c55e' },
+const DEFAULT_COLUMNS: BoardColumn[] = [
+  { id: 'todo', name: 'To Do', order: 0, color: '#64748b', archived: false },
+  { id: 'in_progress', name: 'In Progress', order: 1, color: '#3b82f6', archived: false },
+  { id: 'in_review', name: 'In Review', order: 2, color: '#f59e0b', archived: false },
+  { id: 'done', name: 'Done', order: 3, color: '#22c55e', archived: false },
 ];
 
 export default function BoardPage() {
@@ -38,14 +46,24 @@ export default function BoardPage() {
   const { columns, tasks, taskOrder } = useAppSelector((s) => s.board);
   const activeFilters = useAppSelector((s) => s.ui.activeFilters);
   const onlineUsers = useAppSelector((s) => s.socket.onlineUsers);
+  const currentUser = useAppSelector((s) => s.auth.user);
 
   const [createTaskModal, setCreateTaskModal] = useState(false);
   const [defaultColumn, setDefaultColumn] = useState('');
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+  const [columnModal, setColumnModal] = useState<{ mode: 'create' | 'edit'; column?: BoardColumn } | null>(null);
+  const [columnForm, setColumnForm] = useState({ name: '', color: '#3b82f6' });
+  const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
 
   const { data: project, isLoading: projectLoading } = useGetProjectQuery(projectId);
   const { data: taskList, isLoading: tasksLoading } = useGetTasksQuery({ projectId });
   const [moveTask] = useMoveTaskMutation();
+  const [addColumn, { isLoading: addingColumn }] = useAddProjectColumnMutation();
+  const [updateColumn, { isLoading: updatingColumn }] = useUpdateProjectColumnMutation();
+  const [deleteColumn] = useDeleteProjectColumnMutation();
+  const [archiveColumn] = useArchiveProjectColumnMutation();
+  const [restoreColumn] = useRestoreProjectColumnMutation();
+  const [reorderColumns] = useReorderProjectColumnsMutation();
   const projectColumns = useMemo(
     () => (Array.isArray(project?.columns) && project.columns.length > 0 ? project.columns : DEFAULT_COLUMNS),
     [project?.columns],
@@ -63,6 +81,7 @@ export default function BoardPage() {
   const canMovePermission = usePermission('move_tasks');
   const canCreate = canCreatePermission;
   const canMove = canMovePermission;
+  const canManageColumns = false;
 
   useJoinBoard(projectId);
 
@@ -115,7 +134,104 @@ export default function BoardPage() {
   };
 
   const sortedColumns = Object.values(columns).sort((a, b) => a.order - b.order);
-  const visibleColumns = sortedColumns.length > 0 ? sortedColumns : [...projectColumns].sort((a, b) => a.order - b.order);
+  const allColumns = sortedColumns.length > 0 ? sortedColumns : [...projectColumns].sort((a, b) => a.order - b.order);
+  const visibleColumns = allColumns.filter((column) => !column.archived);
+  const archivedColumns = allColumns.filter((column) => column.archived);
+  const columnNameById = new Map(allColumns.map((column) => [column.id, column.name]));
+
+  const openCreateColumnModal = () => {
+    setColumnForm({ name: '', color: '#3b82f6' });
+    setColumnModal({ mode: 'create' });
+  };
+
+  const openEditColumnModal = (column: BoardColumn) => {
+    setColumnForm({ name: column.name, color: column.color });
+    setColumnModal({ mode: 'edit', column });
+  };
+
+  const closeColumnModal = () => {
+    setColumnModal(null);
+    setColumnForm({ name: '', color: '#3b82f6' });
+  };
+
+  const handleSaveColumn = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const name = columnForm.name.trim();
+    if (!name) {
+      toast.error('Column name is required');
+      return;
+    }
+
+    try {
+      if (columnModal?.mode === 'edit' && columnModal.column) {
+        await updateColumn({ projectId, columnId: columnModal.column.id, name, color: columnForm.color }).unwrap();
+        toast.success('Column updated');
+      } else {
+        await addColumn({ projectId, name, color: columnForm.color }).unwrap();
+        toast.success('Column created');
+      }
+      closeColumnModal();
+    } catch (error) {
+      const message = (error as { data?: { message?: string } })?.data?.message || 'Failed to save column';
+      toast.error(message);
+    }
+  };
+
+  const handleDeleteColumn = async (column: BoardColumn, taskCount: number) => {
+    if (taskCount > 0) {
+      toast.error('Move tasks first');
+      return;
+    }
+
+    try {
+      await deleteColumn({ projectId, columnId: column.id }).unwrap();
+      toast.success('Column deleted');
+    } catch (error) {
+      const message = (error as { data?: { message?: string } })?.data?.message || 'Failed to delete column';
+      toast.error(message);
+    }
+  };
+
+  const handleArchiveColumn = async (column: BoardColumn) => {
+    try {
+      await archiveColumn({ projectId, columnId: column.id }).unwrap();
+      toast.success('Column archived');
+    } catch (error) {
+      const message = (error as { data?: { message?: string } })?.data?.message || 'Failed to archive column';
+      toast.error(message);
+    }
+  };
+
+  const handleRestoreColumn = async (columnId: string) => {
+    if (!columnId) return;
+
+    try {
+      await restoreColumn({ projectId, columnId }).unwrap();
+      toast.success('Column restored');
+    } catch (error) {
+      const message = (error as { data?: { message?: string } })?.data?.message || 'Failed to restore column';
+      toast.error(message);
+    }
+  };
+
+  const handleColumnDrop = async (targetColumnId: string) => {
+    if (!draggedColumnId || draggedColumnId === targetColumnId) return;
+
+    const nextColumns = [...visibleColumns];
+    const fromIndex = nextColumns.findIndex((column) => column.id === draggedColumnId);
+    const toIndex = nextColumns.findIndex((column) => column.id === targetColumnId);
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    const [moved] = nextColumns.splice(fromIndex, 1);
+    nextColumns.splice(toIndex, 0, moved);
+    setDraggedColumnId(null);
+
+    try {
+      await reorderColumns({ projectId, columnIds: nextColumns.map((column) => column.id) }).unwrap();
+    } catch {
+      toast.error('Failed to reorder columns');
+    }
+  };
 
   const getFilteredTasksForColumn = (columnId: string) => {
     const ids = taskOrder[columnId] || [];
@@ -187,13 +303,37 @@ export default function BoardPage() {
             <Plus className="w-3.5 h-3.5" /> Task
           </Button>
         )}
+
+        {canManageColumns && (
+          <>
+            {archivedColumns.length > 0 && (
+              <select
+                defaultValue=""
+                onChange={(e) => {
+                  handleRestoreColumn(e.target.value);
+                  e.target.value = '';
+                }}
+                className="max-w-[150px] rounded-lg border-0 bg-slate-100 px-2.5 py-1.5 text-xs text-slate-600 focus:outline-none dark:bg-slate-800 dark:text-slate-300"
+                title="Restore archived column"
+              >
+                <option value="">Restore</option>
+                {archivedColumns.map((column) => (
+                  <option key={column.id} value={column.id}>{column.name}</option>
+                ))}
+              </select>
+            )}
+            <Button size="sm" variant="secondary" onClick={openCreateColumnModal}>
+              <Plus className="w-3.5 h-3.5" /> Column
+            </Button>
+          </>
+        )}
       </div>
 
       {/* Board content */}
       {boardView === 'kanban' ? (
-        <div className="flex-1 overflow-x-auto overflow-y-hidden">
+        <div className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden">
           <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-            <div className="flex h-full gap-4 p-4 sm:p-5 lg:p-6" style={{ minWidth: visibleColumns.length * 280 + 'px' }}>
+            <div className="flex h-full min-h-0 gap-4 p-4 sm:p-5 lg:p-6" style={{ minWidth: visibleColumns.length * 280 + 'px' }}>
               {visibleColumns.map((col) => {
                 const colTasks = getFilteredTasksForColumn(col.id);
                 return (
@@ -203,6 +343,12 @@ export default function BoardPage() {
                       tasks={colTasks}
                       projectId={projectId}
                       onAddTask={() => { setDefaultColumn(col.id); setCreateTaskModal(true); }}
+                      canManageColumns={canManageColumns}
+                      onEditColumn={openEditColumnModal}
+                      onDeleteColumn={handleDeleteColumn}
+                      onArchiveColumn={handleArchiveColumn}
+                      onColumnDragStart={setDraggedColumnId}
+                      onColumnDrop={handleColumnDrop}
                     />
                   </SortableContext>
                 );
@@ -224,7 +370,7 @@ export default function BoardPage() {
                 href={`/projects/${projectId}/tasks/${task._id}`}
                 className="flex flex-wrap items-center gap-3 px-4 py-3 hover:bg-slate-50 focus:bg-slate-50 focus:outline-none dark:hover:bg-slate-700/50 dark:focus:bg-slate-700/50 transition-colors sm:flex-nowrap sm:gap-4"
               >
-                <span className="w-20 flex-shrink-0 text-sm capitalize text-slate-400">{task.column.replace('_', ' ')}</span>
+                <span className="w-20 flex-shrink-0 truncate text-sm text-slate-400">{columnNameById.get(task.column) || task.column.replace('_', ' ')}</span>
                 <span className="min-w-0 flex-1 basis-[calc(100%-6rem)] truncate text-sm font-medium text-slate-900 dark:text-white sm:basis-auto">{task.title}</span>
                 {task.assignee && <Avatar name={task.assignee.name} avatar={task.assignee.avatar} size="xs" />}
                 {task.dueDate && <span className="text-xs text-slate-400">{new Date(task.dueDate).toLocaleDateString()}</span>}
@@ -243,6 +389,41 @@ export default function BoardPage() {
           onClose={() => setCreateTaskModal(false)}
         />
       )}
+
+      <Modal
+        open={!!columnModal}
+        onClose={closeColumnModal}
+        title={columnModal?.mode === 'edit' ? 'Edit Column' : 'Add Column'}
+        size="sm"
+      >
+        <form onSubmit={handleSaveColumn} className="space-y-4">
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">Name</span>
+            <input
+              value={columnForm.name}
+              onChange={(e) => setColumnForm((current) => ({ ...current, name: e.target.value }))}
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              required
+              autoFocus
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">Color</span>
+            <input
+              type="color"
+              value={columnForm.color}
+              onChange={(e) => setColumnForm((current) => ({ ...current, color: e.target.value }))}
+              className="h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900"
+            />
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={closeColumnModal}>Cancel</Button>
+            <Button type="submit" loading={addingColumn || updatingColumn}>
+              {columnModal?.mode === 'edit' ? 'Save' : 'Create'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

@@ -6,7 +6,7 @@ export interface Project {
   description: string;
   owner: { _id: string; name: string; email: string; avatar: string };
   members: Array<{ _id: string; name: string; email: string; avatar: string; role: string; onlineStatus: string }>;
-  columns: Array<{ id: string; name: string; order: number; color: string }>;
+  columns: Array<{ id: string; name: string; order: number; color: string; archived?: boolean }>;
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
@@ -53,6 +53,51 @@ export const projectsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: (_r, _e, { projectId }) => [{ type: 'Project', id: projectId }],
     }),
+    addProjectColumn: builder.mutation<Project, { projectId: string; name: string; color: string }>({
+      query: ({ projectId, ...body }) => ({
+        url: `/projects/${projectId}/columns`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: (_r, _e, { projectId }) => [{ type: 'Project', id: projectId }],
+    }),
+    updateProjectColumn: builder.mutation<Project, { projectId: string; columnId: string; name: string; color: string }>({
+      query: ({ projectId, columnId, ...body }) => ({
+        url: `/projects/${projectId}/columns/${columnId}`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: (_r, _e, { projectId }) => [{ type: 'Project', id: projectId }],
+    }),
+    deleteProjectColumn: builder.mutation<Project, { projectId: string; columnId: string }>({
+      query: ({ projectId, columnId }) => ({
+        url: `/projects/${projectId}/columns/${columnId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (_r, _e, { projectId }) => [{ type: 'Project', id: projectId }],
+    }),
+    archiveProjectColumn: builder.mutation<Project, { projectId: string; columnId: string }>({
+      query: ({ projectId, columnId }) => ({
+        url: `/projects/${projectId}/columns/${columnId}/archive`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: (_r, _e, { projectId }) => [{ type: 'Project', id: projectId }],
+    }),
+    restoreProjectColumn: builder.mutation<Project, { projectId: string; columnId: string }>({
+      query: ({ projectId, columnId }) => ({
+        url: `/projects/${projectId}/columns/${columnId}/restore`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: (_r, _e, { projectId }) => [{ type: 'Project', id: projectId }],
+    }),
+    reorderProjectColumns: builder.mutation<Project, { projectId: string; columnIds: string[] }>({
+      query: ({ projectId, columnIds }) => ({
+        url: `/projects/${projectId}/columns/reorder`,
+        method: 'PATCH',
+        body: { columnIds },
+      }),
+      invalidatesTags: (_r, _e, { projectId }) => [{ type: 'Project', id: projectId }],
+    }),
   }),
 });
 
@@ -65,4 +110,10 @@ export const {
   useDeleteProjectMutation,
   useAddProjectMemberMutation,
   useRemoveProjectMemberMutation,
+  useAddProjectColumnMutation,
+  useUpdateProjectColumnMutation,
+  useDeleteProjectColumnMutation,
+  useArchiveProjectColumnMutation,
+  useRestoreProjectColumnMutation,
+  useReorderProjectColumnsMutation,
 } = projectsApi;

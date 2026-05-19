@@ -22,6 +22,32 @@ export declare class ProjectsController {
     }>, req: {
         user: UserDocument;
     }): Promise<import("./project.schema").ProjectDocument>;
+    addColumn(id: string, body: {
+        name: string;
+        color?: string;
+    }, req: {
+        user: UserDocument;
+    }): Promise<import("./project.schema").ProjectDocument>;
+    reorderColumns(id: string, body: {
+        columnIds: string[];
+    }, req: {
+        user: UserDocument;
+    }): Promise<import("./project.schema").ProjectDocument>;
+    updateColumn(id: string, columnId: string, body: {
+        name?: string;
+        color?: string;
+    }, req: {
+        user: UserDocument;
+    }): Promise<import("./project.schema").ProjectDocument>;
+    archiveColumn(id: string, columnId: string, req: {
+        user: UserDocument;
+    }): Promise<import("./project.schema").ProjectDocument>;
+    restoreColumn(id: string, columnId: string, req: {
+        user: UserDocument;
+    }): Promise<import("./project.schema").ProjectDocument>;
+    deleteColumn(id: string, columnId: string, req: {
+        user: UserDocument;
+    }): Promise<import("./project.schema").ProjectDocument>;
     archive(id: string, req: {
         user: UserDocument;
     }): Promise<import("./project.schema").ProjectDocument>;

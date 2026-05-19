@@ -176,6 +176,10 @@ export const socketMiddleware: Middleware = (store) => (next) => (action) => {
       store.dispatch(baseApi.util.invalidateTags(taskListTags));
     });
 
+    socket.on('project-updated', (project) => {
+      store.dispatch(baseApi.util.invalidateTags([{ type: 'Project', id: project._id }, 'Project']));
+    });
+
     socket.on('notification', (notification) => {
       store.dispatch(addNotification(notification));
       store.dispatch(baseApi.util.invalidateTags(['Notification']));

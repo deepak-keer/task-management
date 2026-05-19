@@ -58,6 +58,15 @@ let TasksService = class TasksService {
             return;
         await this.projectModel.updateOne({ _id: new mongoose_2.Types.ObjectId(projectId.toString()) }, { $addToSet: { members: new mongoose_2.Types.ObjectId(assigneeId) } });
     }
+    async ensureActiveProjectColumn(projectId, columnId) {
+        const project = await this.projectModel.findById(projectId).select('columns').exec();
+        if (!project)
+            throw new common_1.NotFoundException('Project not found');
+        const column = project.columns?.find((item) => item.id === columnId);
+        if (!column || column.archived) {
+            throw new common_1.ForbiddenException('Column is not available');
+        }
+    }
     getObjectIdString(value) {
         if (!value)
             return null;
@@ -124,7 +133,7 @@ let TasksService = class TasksService {
     async findMyTasks(userId) {
         return this.taskModel
             .find({ assignee: new mongoose_2.Types.ObjectId(userId) })
-            .populate('project', 'name')
+            .populate('project', 'name columns')
             .populate('assignee', 'name email avatar')
             .sort({ dueDate: 1, priority: 1 })
             .exec();
@@ -136,7 +145,7 @@ let TasksService = class TasksService {
             dueDate: { $lt: new Date() },
             status: { $ne: 'done' },
         })
-            .populate('project', 'name')
+            .populate('project', 'name columns')
             .exec();
     }
     async findById(id, user) {
@@ -167,6 +176,7 @@ let TasksService = class TasksService {
             .findOne({ project: new mongoose_2.Types.ObjectId(data.projectId), column: data.column })
             .sort({ order: -1 })
             .exec();
+        await this.ensureActiveProjectColumn(data.projectId, data.column);
         const order = lastTask ? lastTask.order + 1 : 0;
         const assigneeId = user.role === 'member' ? user._id.toString() : data.assigneeId;
         await this.ensureAssigneeCanSeeProject(data.projectId, assigneeId);
@@ -219,6 +229,9 @@ let TasksService = class TasksService {
         const task = await this.taskModel.findById(id).exec();
         if (!task)
             throw new common_1.NotFoundException('Task not found');
+        if (data.column) {
+            await this.ensureActiveProjectColumn(task.project, data.column);
+        }
         const changedFields = Object.keys(data);
         const statusOnlyFields = ['status', 'column'];
         const isStatusOnlyUpdate = changedFields.length > 0 && changedFields.every((field) => statusOnlyFields.includes(field));
