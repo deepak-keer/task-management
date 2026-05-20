@@ -1,7 +1,1 @@
-{
-  "/(super-admin)/admin/stats/page": "app/(super-admin)/admin/stats/page.js",
-  "/(main)/notifications/page": "app/(main)/notifications/page.js",
-  "/(super-admin)/admin/permissions/page": "app/(super-admin)/admin/permissions/page.js",
-  "/(super-admin)/admin/users/page": "app/(super-admin)/admin/users/page.js",
-  "/(main)/team/page": "app/(main)/team/page.js"
-}
+{}
