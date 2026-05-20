@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
@@ -12,6 +12,8 @@ import { PermissionsService } from '../permissions/permissions.service';
 
 @Injectable()
 export class TasksService {
+  private readonly logger = new Logger(TasksService.name);
+
   constructor(
     @InjectModel(Task.name) private taskModel: Model<TaskDocument>,
     @InjectModel(Project.name) private projectModel: Model<ProjectDocument>,
@@ -309,6 +311,10 @@ export class TasksService {
           priority: task.priority,
         },
       });
+    } else if (assigneeId) {
+      this.logger.log(
+        `Skipped task_assigned notification for task=${task._id.toString()}: assignee is actor or actor is member`,
+      );
     }
 
     return populated;

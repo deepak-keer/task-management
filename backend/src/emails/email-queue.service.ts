@@ -32,16 +32,25 @@ export class EmailQueueService {
 
   async queueEmailForNotification(data: QueueNotificationInput): Promise<void> {
     const notificationType = normalizeEmailNotificationType(data.type, data.meta || {});
-    if (!notificationType) return;
+    if (!notificationType) {
+      this.logger.log(`Skipped email queue for notification type=${data.type}: unsupported email type`);
+      return;
+    }
 
     const user = await this.userModel.findById(data.recipient).select('name email').lean().exec();
-    if (!user?.email) return;
+    if (!user?.email) {
+      this.logger.warn(`Skipped ${notificationType} email for ${data.recipient}: recipient email missing`);
+      return;
+    }
 
     const emailEnabled = await this.isEmailEnabled(data.recipient, notificationType);
-    if (!emailEnabled) return;
+    if (!emailEnabled) {
+      this.logger.log(`Skipped ${notificationType} email for ${data.recipient}: preference disabled`);
+      return;
+    }
 
     if (await this.isRateLimited(data.recipient, notificationType)) {
-      this.logger.log(`Skipped ${notificationType} email for ${data.recipient}: rate limited`);
+      this.logger.log(`Skipped ${notificationType} email for ${data.recipient}: duplicate pending email already exists`);
       return;
     }
 
@@ -68,6 +77,7 @@ export class EmailQueueService {
       status: 'pending',
       retries: 0,
     });
+    this.logger.log(`Queued ${notificationType} email for ${user.email}`);
 
     await this.rateLimitModel.findOneAndUpdate(
       { userId: new Types.ObjectId(data.recipient), notificationType },
@@ -87,21 +97,14 @@ export class EmailQueueService {
 
   private async isRateLimited(userId: string, notificationType: EmailNotificationType): Promise<boolean> {
     const since = new Date(Date.now() - 60 * 60 * 1000);
-    const [pendingEmail, recentLimit] = await Promise.all([
-      this.pendingEmailModel.exists({
-        userId: new Types.ObjectId(userId),
-        notificationType,
-        status: 'pending',
-        createdAt: { $gte: since },
-      }),
-      this.rateLimitModel.exists({
-        userId: new Types.ObjectId(userId),
-        notificationType,
-        lastEmailTime: { $gte: since },
-      }),
-    ]);
+    const pendingEmail = await this.pendingEmailModel.exists({
+      userId: new Types.ObjectId(userId),
+      notificationType,
+      status: 'pending',
+      createdAt: { $gte: since },
+    });
 
-    return !!pendingEmail || !!recentLimit;
+    return !!pendingEmail;
   }
 
   private getMetaString(meta: Record<string, unknown> | undefined, key: string): string {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Notification, NotificationDocument } from './notification.schema';
@@ -7,6 +7,8 @@ import { EmailQueueService } from '../emails/email-queue.service';
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
+
   constructor(
     @InjectModel(Notification.name) private notificationModel: Model<NotificationDocument>,
     private appGateway: AppGateway,
@@ -41,9 +43,8 @@ export class NotificationsService {
     try {
       await this.emailQueueService.queueEmailForNotification(data);
     } catch (error) {
-      console.error(
-        `Failed to queue email notification user=${data.recipient} type=${data.type}:`,
-        error,
+      this.logger.error(
+        `Failed to queue email notification user=${data.recipient} type=${data.type}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
 
