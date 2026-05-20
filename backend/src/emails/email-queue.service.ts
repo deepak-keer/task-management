@@ -8,6 +8,7 @@ import { EmailNotificationType, EMAIL_NOTIFICATION_LABELS, normalizeEmailNotific
 import { EmailTemplateService } from './email-template.service';
 import { NotificationPreference, NotificationPreferenceDocument } from './notification-preference.schema';
 import { PendingEmail, PendingEmailDocument } from './pending-email.schema';
+import { EmailProcessorService } from './email-processor.service';
 
 type QueueNotificationInput = {
   recipient: string;
@@ -28,6 +29,7 @@ export class EmailQueueService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private templates: EmailTemplateService,
     private configService: ConfigService,
+    private emailProcessorService: EmailProcessorService,
   ) {}
 
   async queueEmailForNotification(data: QueueNotificationInput): Promise<void> {
@@ -78,6 +80,14 @@ export class EmailQueueService {
       retries: 0,
     });
     this.logger.log(`Queued ${notificationType} email for ${user.email}`);
+
+    setTimeout(() => {
+      void this.emailProcessorService.processPendingEmails(true, 'queue').catch((error) => {
+        this.logger.error(
+          `Queued email processor failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
+    }, 1000);
 
     await this.rateLimitModel.findOneAndUpdate(
       { userId: new Types.ObjectId(data.recipient), notificationType },
