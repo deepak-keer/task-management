@@ -21,6 +21,6 @@ import { PendingEmail, PendingEmailSchema } from './pending-email.schema';
     ]),
   ],
   providers: [EmailService, EmailTemplateService, EmailQueueService, EmailProcessorService],
-  exports: [EmailQueueService, MongooseModule],
+  exports: [EmailQueueService, EmailProcessorService, MongooseModule],
 })
 export class EmailsModule {}

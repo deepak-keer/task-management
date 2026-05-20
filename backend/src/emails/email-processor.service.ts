@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
@@ -7,7 +7,7 @@ import { EmailService } from './email.service';
 import { PendingEmail, PendingEmailDocument } from './pending-email.schema';
 
 @Injectable()
-export class EmailProcessorService {
+export class EmailProcessorService implements OnApplicationBootstrap {
   private readonly logger = new Logger(EmailProcessorService.name);
   private processing = false;
   private lastRunAt = 0;
@@ -18,12 +18,25 @@ export class EmailProcessorService {
     private configService: ConfigService,
   ) {}
 
+  onApplicationBootstrap(): void {
+    setTimeout(() => {
+      void this.processPendingEmails(true, 'startup').catch((error) => {
+        this.logger.error(`Startup email queue run failed: ${error instanceof Error ? error.message : String(error)}`);
+      });
+    }, 5000);
+  }
+
   @Cron('* * * * *')
-  async processPendingEmails(): Promise<void> {
-    if (this.processing) return;
+  async processPendingEmails(
+    force = false,
+    source = 'cron',
+  ): Promise<{ checked: number; sent: number; failed: number; skipped: boolean }> {
+    if (this.processing) return { checked: 0, sent: 0, failed: 0, skipped: true };
     const intervalMinutes = Number(this.configService.get<string>('CRON_EMAIL_INTERVAL') || 5);
     const intervalMs = Math.max(1, intervalMinutes) * 60 * 1000;
-    if (Date.now() - this.lastRunAt < intervalMs) return;
+    if (!force && Date.now() - this.lastRunAt < intervalMs) {
+      return { checked: 0, sent: 0, failed: 0, skipped: true };
+    }
 
     this.processing = true;
     this.lastRunAt = Date.now();
@@ -37,8 +50,8 @@ export class EmailProcessorService {
         .exec();
 
       if (pendingEmails.length === 0) {
-        this.logger.log('Email queue check completed: no pending emails');
-        return;
+        this.logger.log(`Email queue check completed from ${source}: no pending emails`);
+        return { checked: 0, sent: 0, failed: 0, skipped: false };
       }
 
       let sent = 0;
@@ -81,8 +94,9 @@ export class EmailProcessorService {
       }
 
       this.logger.log(
-        `Email queue run completed in ${Date.now() - startedAt.getTime()}ms: sent=${sent}, failed=${failed}`,
+        `Email queue run completed from ${source} in ${Date.now() - startedAt.getTime()}ms: checked=${pendingEmails.length}, sent=${sent}, failed=${failed}`,
       );
+      return { checked: pendingEmails.length, sent, failed, skipped: false };
     } finally {
       this.processing = false;
     }

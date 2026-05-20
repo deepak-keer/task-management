@@ -79,6 +79,7 @@ export default function AdminStatsPage() {
     name: formatStatusName(item._id, item.name),
     value: item.count,
   }));
+  const totalStatusTasks = tasksByStatus.reduce((sum, item) => sum + item.value, 0);
 
   const tasksByPriority = s.tasks.byPriority.map((item) => ({
     name: item._id || 'Unknown',
@@ -119,14 +120,54 @@ export default function AdminStatsPage() {
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5">
           <h2 className="font-semibold text-slate-900 dark:text-white mb-4">Tasks by Status</h2>
           {tasksByStatus.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie data={tasksByStatus} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, value }) => `${name}: ${value}`} labelLine={false}>
-                  {tasksByStatus.map((_, i) => <Cell key={i} fill={STATUS_COLORS[i % STATUS_COLORS.length]} />)}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="grid items-center gap-4 sm:grid-cols-[220px_minmax(0,1fr)]">
+              <div className="relative h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={tasksByStatus}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={54}
+                      outerRadius={82}
+                      paddingAngle={2}
+                      dataKey="value"
+                      strokeWidth={2}
+                      stroke="#0f172a"
+                    >
+                      {tasksByStatus.map((_, i) => <Cell key={i} fill={STATUS_COLORS[i % STATUS_COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ background: '#1e293b', border: 'none', borderRadius: '8px', color: '#f1f5f9' }}
+                      itemStyle={{ color: '#f1f5f9' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{totalStatusTasks}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Tasks</p>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {tasksByStatus.map((item, i) => {
+                  const percent = totalStatusTasks ? Math.round((item.value / totalStatusTasks) * 100) : 0;
+                  return (
+                    <div key={item.name} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-900/50">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ backgroundColor: STATUS_COLORS[i % STATUS_COLORS.length] }} />
+                        <span className="truncate text-sm font-medium text-slate-700 dark:text-slate-200">{item.name}</span>
+                      </div>
+                      <div className="flex flex-shrink-0 items-center gap-2 text-sm">
+                        <span className="font-semibold text-slate-900 dark:text-white">{item.value}</span>
+                        <span className="text-xs text-slate-400">{percent}%</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           ) : <p className="text-center text-slate-400 py-12 text-sm">No task data yet</p>}
         </div>
 

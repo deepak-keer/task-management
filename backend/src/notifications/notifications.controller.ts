@@ -3,7 +3,9 @@ import {
   Get,
   Patch,
   Delete,
+  ForbiddenException,
   Param,
+  Post,
   Query,
   UseGuards,
   Request,
@@ -11,11 +13,15 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { NotificationsService } from './notifications.service';
 import { UserDocument } from '../users/user.schema';
+import { EmailProcessorService } from '../emails/email-processor.service';
 
 @Controller('notifications')
 @UseGuards(JwtAuthGuard)
 export class NotificationsController {
-  constructor(private notificationsService: NotificationsService) {}
+  constructor(
+    private notificationsService: NotificationsService,
+    private emailProcessorService: EmailProcessorService,
+  ) {}
 
   @Get()
   getAll(
@@ -48,5 +54,14 @@ export class NotificationsController {
   @Delete(':id')
   delete(@Param('id') id: string, @Request() req: { user: UserDocument }) {
     return this.notificationsService.delete(id, req.user._id.toString());
+  }
+
+  @Post('process-email-queue')
+  processEmailQueue(@Request() req: { user: UserDocument }) {
+    if (req.user.role !== 'super_admin') {
+      throw new ForbiddenException('Only super admins can process the email queue');
+    }
+
+    return this.emailProcessorService.processPendingEmails(true, 'manual');
   }
 }
