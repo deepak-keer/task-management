@@ -3,12 +3,14 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Notification, NotificationDocument } from './notification.schema';
 import { AppGateway } from '../gateway/app.gateway';
+import { EmailQueueService } from '../emails/email-queue.service';
 
 @Injectable()
 export class NotificationsService {
   constructor(
     @InjectModel(Notification.name) private notificationModel: Model<NotificationDocument>,
     private appGateway: AppGateway,
+    private emailQueueService: EmailQueueService,
   ) {}
 
   async create(data: {
@@ -35,6 +37,15 @@ export class NotificationsService {
       createdAt: notification.createdAt,
       meta: notification.meta,
     });
+
+    try {
+      await this.emailQueueService.queueEmailForNotification(data);
+    } catch (error) {
+      console.error(
+        `Failed to queue email notification user=${data.recipient} type=${data.type}:`,
+        error,
+      );
+    }
 
     return notification;
   }

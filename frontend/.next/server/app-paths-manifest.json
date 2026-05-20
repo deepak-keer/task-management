@@ -1,1 +1,9 @@
-{}
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/(super-admin)/admin/stats/page": "app/(super-admin)/admin/stats/page.js",
+  "/(super-admin)/admin/workspaces/page": "app/(super-admin)/admin/workspaces/page.js",
+  "/(super-admin)/admin/users/page": "app/(super-admin)/admin/users/page.js",
+  "/(main)/notifications/page": "app/(main)/notifications/page.js",
+  "/(main)/profile/page": "app/(main)/profile/page.js",
+  "/(main)/projects/[id]/page": "app/(main)/projects/[id]/page.js"
+}

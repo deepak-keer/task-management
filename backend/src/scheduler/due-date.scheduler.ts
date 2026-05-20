@@ -36,7 +36,13 @@ export class DueDateScheduler {
           type: 'due_reminder',
           message: `Task "${task.title}" is due in ${hoursLeft} hour${hoursLeft !== 1 ? 's' : ''}`,
           link: `/projects/${task.project}?task=${task._id}`,
-          meta: { taskId: task._id, dueDate: task.dueDate },
+          meta: {
+            taskId: task._id,
+            projectId: task.project,
+            dueDate: task.dueDate,
+            taskTitle: task.title,
+            actorName: 'TaskFlow reminder',
+          },
         });
       }
 

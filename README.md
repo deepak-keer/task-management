@@ -58,7 +58,7 @@ MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/taskmanager
 JWT_SECRET=change-this-to-a-long-random-string
 JWT_EXPIRES_IN=7d
 PORT=3001
-FRONTEND_URL=https://task-management-karmyug.vercel.app
+FRONTEND_URL=http://localhost:3000
 ```
 
 **Frontend** — copy `.env.example` to `.env.local`:
@@ -66,8 +66,8 @@ FRONTEND_URL=https://task-management-karmyug.vercel.app
 cd frontend && cp .env.example .env.local
 ```
 ```
-NEXT_PUBLIC_API_URL=https://task-management-k9q8.onrender.com/api
-NEXT_PUBLIC_SOCKET_URL=https://task-management-k9q8.onrender.com
+NEXT_PUBLIC_API_URL=http://localhost:3001/api
+NEXT_PUBLIC_SOCKET_URL=http://localhost:3001
 ```
 
 ### 3. Seed the Super Admin
@@ -93,7 +93,7 @@ cd backend && npm run start:dev
 cd frontend && npm run dev
 ```
 
-Open [https://task-management-karmyug.vercel.app](https://task-management-karmyug.vercel.app)
+Open [http://localhost:3000](http://localhost:3000)
 
 ---
 

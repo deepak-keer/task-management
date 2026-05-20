@@ -10,6 +10,7 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsersService } from './users.service';
 import { UserDocument } from './user.schema';
+import { EmailNotificationType } from '../emails/email-types';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
@@ -29,6 +30,11 @@ export class UsersController {
   @Get('me/stats')
   getMyStats(@Request() req: { user: UserDocument }) {
     return this.usersService.getMyStats(req.user._id.toString());
+  }
+
+  @Get('me/notification-preferences')
+  getNotificationPreferences(@Request() req: { user: UserDocument }) {
+    return this.usersService.getNotificationPreferences(req.user._id.toString());
   }
 
   @Get(':id')
@@ -57,5 +63,19 @@ export class UsersController {
       body.oldPassword,
       body.newPassword,
     );
+  }
+
+  @Patch(':id/notification-preferences')
+  updateNotificationPreference(
+    @Param('id') id: string,
+    @Request() req: { user: UserDocument },
+    @Body()
+    body: {
+      notificationType: EmailNotificationType;
+      emailEnabled?: boolean;
+      inAppEnabled?: boolean;
+    },
+  ) {
+    return this.usersService.updateNotificationPreference(id, req.user._id.toString(), body);
   }
 }

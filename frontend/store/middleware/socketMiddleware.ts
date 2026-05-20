@@ -128,7 +128,7 @@ export const socketMiddleware: Middleware = (store) => (next) => (action) => {
     if (!token) return result;
     if (socket) socket.disconnect();
 
-    socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'https://task-management-k9q8.onrender.com', {
+    socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
       auth: { token },
       reconnection: true,
       reconnectionAttempts: 10,
@@ -229,6 +229,10 @@ export const socketMiddleware: Middleware = (store) => (next) => (action) => {
       };
       store.dispatch(setPermissions(updatedPermissions as Parameters<typeof setPermissions>[0]));
       store.dispatch(baseApi.util.invalidateTags(['Permission']));
+    });
+
+    socket.on('notification-preferences-updated', () => {
+      store.dispatch(baseApi.util.invalidateTags([{ type: 'User', id: 'NOTIFICATION_PREFERENCES' }]));
     });
 
     socket.on('user-approved', () => {

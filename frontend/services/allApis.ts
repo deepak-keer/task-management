@@ -116,6 +116,22 @@ export interface AppUser {
   invitedBy?: { _id: string; name: string; email: string };
 }
 
+export type EmailNotificationType =
+  | 'task_assigned'
+  | 'mentioned_in_comment'
+  | 'task_status_changed'
+  | 'task_approved'
+  | 'sprint_deadline'
+  | 'task_due_tomorrow'
+  | 'high_priority_assigned';
+
+export interface NotificationPreference {
+  userId: string;
+  notificationType: EmailNotificationType;
+  emailEnabled: boolean;
+  inAppEnabled: boolean;
+}
+
 export const usersApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getUsers: builder.query<AppUser[], void>({
@@ -139,6 +155,17 @@ export const usersApi = baseApi.injectEndpoints({
     getMyStats: builder.query<unknown, void>({
       query: () => '/users/me/stats',
     }),
+    getNotificationPreferences: builder.query<NotificationPreference[], void>({
+      query: () => '/users/me/notification-preferences',
+      providesTags: [{ type: 'User', id: 'NOTIFICATION_PREFERENCES' }],
+    }),
+    updateNotificationPreference: builder.mutation<
+      NotificationPreference,
+      { id: string; notificationType: EmailNotificationType; emailEnabled?: boolean; inAppEnabled?: boolean }
+    >({
+      query: ({ id, ...body }) => ({ url: `/users/${id}/notification-preferences`, method: 'PATCH', body }),
+      invalidatesTags: [{ type: 'User', id: 'NOTIFICATION_PREFERENCES' }],
+    }),
   }),
 });
 
@@ -149,6 +176,8 @@ export const {
   useChangePasswordMutation,
   useGetRecentlyViewedQuery,
   useGetMyStatsQuery,
+  useGetNotificationPreferencesQuery,
+  useUpdateNotificationPreferenceMutation,
 } = usersApi;
 
 // ── Invites ───────────────────────────────────────────────────────────────────

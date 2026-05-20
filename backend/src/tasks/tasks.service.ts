@@ -301,7 +301,13 @@ export class TasksService {
         type: 'task_assigned',
         message: `${user.name} assigned you to "${data.title}"`,
         link: `/projects/${data.projectId}?task=${task._id}`,
-        meta: { taskId: task._id, projectId: data.projectId },
+        meta: {
+          taskId: task._id,
+          projectId: data.projectId,
+          taskTitle: data.title,
+          actorName: user.name,
+          priority: task.priority,
+        },
       });
     }
 
@@ -414,6 +420,13 @@ export class TasksService {
         type: 'task_assigned',
         message: `${user.name} assigned you to "${updated.title}"`,
         link: `/projects/${task.project}?task=${id}`,
+        meta: {
+          taskId: id,
+          projectId: task.project,
+          taskTitle: updated.title,
+          actorName: user.name,
+          priority: updated.priority,
+        },
       });
     }
 
@@ -426,7 +439,7 @@ export class TasksService {
         completed
           ? `${user.name} completed "${updated.title}"`
           : `${user.name} moved "${updated.title}" to ${data.status.replace(/_/g, ' ')}`,
-        { from: task.status, to: data.status },
+        { from: task.status, to: data.status, taskTitle: updated.title, actorName: user.name },
       );
     } else if (changes.length > 0) {
       await this.notifyTaskParticipants(
@@ -555,7 +568,7 @@ export class TasksService {
         completed
           ? `${user.name} completed "${updated.title}"`
           : `${user.name} moved "${updated.title}" to ${data.status.replace(/_/g, ' ')}`,
-        { from: task.status, to: data.status },
+        { from: task.status, to: data.status, taskTitle: updated.title, actorName: user.name },
       );
     }
 

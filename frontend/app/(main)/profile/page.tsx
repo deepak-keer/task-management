@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../../store/index";
 import { updateUser } from "../../../store/slices/authSlice";
 import {
   useUpdateUserMutation,
   useChangePasswordMutation,
+  useGetNotificationPreferencesQuery,
+  useUpdateNotificationPreferenceMutation,
+  type EmailNotificationType,
 } from "../../../services/allApis";
 import { Button, Avatar } from "../../../components/ui/index";
 import { setTheme } from "../../../store/slices/uiSlice";
 import toast from "react-hot-toast";
-import { User, Lock, Bell, Palette, Activity } from "lucide-react";
+import { User, Lock, Bell, Palette } from "lucide-react";
 
 type ProfileForm = {
   name: string;
@@ -19,11 +22,25 @@ type ProfileForm = {
   theme: "light" | "dark";
 };
 
+const EMAIL_NOTIFICATION_OPTIONS: Array<{ type: EmailNotificationType; label: string }> = [
+  { type: "task_assigned", label: "Email me when task assigned" },
+  { type: "mentioned_in_comment", label: "Email me when mentioned" },
+  { type: "task_status_changed", label: "Email me when task status changes" },
+  { type: "task_approved", label: "Email me when task approved" },
+  { type: "sprint_deadline", label: "Email me for sprint deadlines" },
+  { type: "task_due_tomorrow", label: "Email me when task due tomorrow" },
+  { type: "high_priority_assigned", label: "Email me for high priority tasks" },
+];
+
 export default function ProfilePage() {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((s) => s.auth);
   const [updateUserMutation, { isLoading: saving }] = useUpdateUserMutation();
   const [changePwd, { isLoading: changingPwd }] = useChangePasswordMutation();
+  const { data: emailPreferences = [], isLoading: loadingEmailPreferences } =
+    useGetNotificationPreferencesQuery(undefined, { skip: !user });
+  const [updateEmailPreference, { isLoading: savingEmailPreference }] =
+    useUpdateNotificationPreferenceMutation();
 
   const [profile, setProfile] = useState<ProfileForm>({
     name: user?.name || "",
@@ -31,13 +48,12 @@ export default function ProfilePage() {
     onlineStatus: user?.onlineStatus || "online",
     theme: user?.theme || "light",
   });
-
-  const [notifPrefs, setNotifPrefs] = useState({
-    taskAssigned: user?.notificationPrefs?.taskAssigned ?? true,
-    commentAdded: user?.notificationPrefs?.commentAdded ?? true,
-    mentioned: user?.notificationPrefs?.mentioned ?? true,
-    dueDateReminder: user?.notificationPrefs?.dueDateReminder ?? true,
-  });
+  const [emailPrefs, setEmailPrefs] = useState<Record<EmailNotificationType, boolean>>(
+    () =>
+      Object.fromEntries(
+        EMAIL_NOTIFICATION_OPTIONS.map(({ type }) => [type, true]),
+      ) as Record<EmailNotificationType, boolean>,
+  );
 
   const [pwdForm, setPwdForm] = useState({
     oldPassword: "",
@@ -73,17 +89,32 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSaveNotifs = async () => {
+  useEffect(() => {
+    if (emailPreferences.length === 0) return;
+
+    setEmailPrefs(
+      Object.fromEntries(
+        EMAIL_NOTIFICATION_OPTIONS.map(({ type }) => [
+          type,
+          emailPreferences.find((item) => item.notificationType === type)?.emailEnabled ?? true,
+        ]),
+      ) as Record<EmailNotificationType, boolean>,
+    );
+  }, [emailPreferences]);
+
+  const handleSaveEmailPreferences = async () => {
     if (!user) return;
     try {
-      await updateUserMutation({
-        id: user._id,
-        data: { notificationPrefs: notifPrefs } as Parameters<
-          typeof updateUserMutation
-        >[0]["data"],
-      }).unwrap();
-      dispatch(updateUser({ notificationPrefs: notifPrefs }));
-      toast.success("Notification preferences saved!");
+      await Promise.all(
+        EMAIL_NOTIFICATION_OPTIONS.map(({ type }) =>
+          updateEmailPreference({
+            id: user._id,
+            notificationType: type,
+            emailEnabled: emailPrefs[type],
+          }).unwrap(),
+        ),
+      );
+      toast.success("Preferences saved");
     } catch {
       toast.error("Failed to save preferences");
     }
@@ -234,41 +265,37 @@ export default function ProfilePage() {
         <div className="flex items-center gap-2 mb-5">
           <Bell className="w-4 h-4 text-slate-400" />
           <h2 className="font-semibold text-slate-900 dark:text-white">
-            Notification Preferences
+            Email Notification Preferences
           </h2>
         </div>
 
         <div className="space-y-3">
-          {[
-            { key: "taskAssigned", label: "Task assigned to me" },
-            { key: "commentAdded", label: "New comment on my tasks" },
-            { key: "mentioned", label: "Mentioned in a comment" },
-            { key: "dueDateReminder", label: "Due date reminders" },
-          ].map(({ key, label }) => (
-            <div key={key} className="flex items-center justify-between gap-4 py-2">
+          {EMAIL_NOTIFICATION_OPTIONS.map(({ type, label }) => (
+            <label key={type} className="flex items-center justify-between gap-4 py-2">
               <span className="min-w-0 text-sm text-slate-700 dark:text-slate-300">
                 {label}
               </span>
-              <button
-                onClick={() =>
-                  setNotifPrefs({
-                    ...notifPrefs,
-                    [key]: !notifPrefs[key as keyof typeof notifPrefs],
-                  })
+              <input
+                type="checkbox"
+                checked={emailPrefs[type]}
+                disabled={loadingEmailPreferences || savingEmailPreference}
+                onChange={() =>
+                  setEmailPrefs((prev) => ({ ...prev, [type]: !prev[type] }))
                 }
-                className={`relative w-10 h-5.5 rounded-full transition-colors ${notifPrefs[key as keyof typeof notifPrefs] ? "bg-blue-600" : "bg-slate-200 dark:bg-slate-600"}`}
-                style={{ height: "22px" }}
-              >
-                <span
-                  className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${notifPrefs[key as keyof typeof notifPrefs] ? "translate-x-[18px]" : ""}`}
-                />
-              </button>
-            </div>
+                className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                aria-label={label}
+              />
+            </label>
           ))}
         </div>
 
         <div className="flex justify-stretch mt-4 sm:justify-end">
-          <Button onClick={handleSaveNotifs} variant="secondary">
+          <Button
+            onClick={handleSaveEmailPreferences}
+            loading={savingEmailPreference}
+            variant="secondary"
+            disabled={loadingEmailPreferences}
+          >
             Save Preferences
           </Button>
         </div>
