@@ -24,6 +24,7 @@ export class Notification {
       'user_rejected',
       'permission_changed',
       'task_watched',
+      'announcement',
     ],
     required: true,
   })

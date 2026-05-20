@@ -121,14 +121,14 @@ export function Modal({
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-      <div className={cn('relative max-h-[calc(100vh-2rem)] w-full overflow-hidden bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 animate-scale-in', sizeMap[size])}>
+      <div className={cn('relative max-h-[calc(100vh-2rem)] w-full overflow-hidden bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 animate-modal-in will-change-transform', sizeMap[size])}>
         <div className="flex items-center justify-between gap-3 px-4 py-4 border-b border-slate-200 dark:border-slate-700 sm:px-6">
           <h2 className="min-w-0 truncate text-lg font-semibold text-slate-900 dark:text-white">{title}</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+          <button type="button" onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>

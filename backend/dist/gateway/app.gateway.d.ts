@@ -32,6 +32,7 @@ export declare class AppGateway implements OnGatewayConnection, OnGatewayDisconn
     }): void;
     emitToProject(projectId: string, event: string, data: unknown): void;
     emitToUser(userId: string, event: string, data: unknown): void;
+    emitToRole(role: string, event: string, data: unknown): void;
     forceLogoutUser(userId: string, event: string, data: unknown): void;
     emitToAll(event: string, data: unknown): void;
 }

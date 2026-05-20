@@ -130,7 +130,7 @@ let SuperAdminService = class SuperAdminService {
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         const today = new Date(now);
         today.setHours(0, 0, 0, 0);
-        const [totalUsers, usersByRole, totalProjects, activeProjects, archivedProjects, totalTasks, tasksByStatus, tasksByPriority, newUsersThisWeek, activeToday,] = await Promise.all([
+        const [totalUsers, usersByRole, totalProjects, activeProjects, archivedProjects, totalTasks, tasksByStatus, tasksByPriority, newUsersThisWeek, activeToday, projectsForStatusLabels,] = await Promise.all([
             this.userModel.countDocuments(),
             this.userModel.aggregate([{ $group: { _id: '$role', count: { $sum: 1 } } }]),
             this.projectModel.countDocuments(),
@@ -141,11 +141,30 @@ let SuperAdminService = class SuperAdminService {
             this.taskModel.aggregate([{ $group: { _id: '$priority', count: { $sum: 1 } } }]),
             this.userModel.countDocuments({ createdAt: { $gte: weekAgo } }),
             this.userModel.countDocuments({ lastActiveAt: { $gte: today } }),
+            this.projectModel.find().select('columns').lean().exec(),
         ]);
+        const statusLabelMap = new Map();
+        for (const project of projectsForStatusLabels) {
+            for (const column of project.columns || []) {
+                if (column?.id && column?.name && !statusLabelMap.has(column.id)) {
+                    statusLabelMap.set(column.id, column.name);
+                }
+            }
+        }
+        const formatStatusLabel = (status) => {
+            if (!status)
+                return 'Unknown';
+            return statusLabelMap.get(status) || status.replace(/[_-]/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+        };
+        const formattedTasksByStatus = tasksByStatus.map((item) => ({
+            _id: item._id,
+            name: formatStatusLabel(item._id),
+            count: item.count,
+        }));
         return {
             users: { total: totalUsers, byRole: usersByRole, newThisWeek: newUsersThisWeek, activeToday },
             projects: { total: totalProjects, active: activeProjects, archived: archivedProjects },
-            tasks: { total: totalTasks, byStatus: tasksByStatus, byPriority: tasksByPriority },
+            tasks: { total: totalTasks, byStatus: formattedTasksByStatus, byPriority: tasksByPriority },
         };
     }
     async getAllProjects() {
@@ -158,6 +177,14 @@ let SuperAdminService = class SuperAdminService {
     async archiveProject(id) {
         const updated = await this.projectModel
             .findByIdAndUpdate(id, { isArchived: true }, { new: true })
+            .exec();
+        if (!updated)
+            throw new common_1.NotFoundException('Project not found');
+        return updated;
+    }
+    async restoreProject(id) {
+        const updated = await this.projectModel
+            .findByIdAndUpdate(id, { isArchived: false }, { new: true })
             .exec();
         if (!updated)
             throw new common_1.NotFoundException('Project not found');

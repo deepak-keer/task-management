@@ -77,6 +77,11 @@ export class SuperAdminController {
     return this.superAdminService.archiveProject(id);
   }
 
+  @Patch('workspaces/:id/restore')
+  restoreProject(@Param('id') id: string) {
+    return this.superAdminService.restoreProject(id);
+  }
+
   @Delete('workspaces/:id')
   deleteProject(@Param('id') id: string) {
     return this.superAdminService.deleteProject(id);

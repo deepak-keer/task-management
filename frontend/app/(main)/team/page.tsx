@@ -20,8 +20,8 @@ export default function TeamPage() {
 
   const filtered = users.filter(
     (u) =>
-      u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase()),
+      (u.name || "").toLowerCase().includes(search.toLowerCase()) ||
+      (u.email || "").toLowerCase().includes(search.toLowerCase()),
   );
 
   const getStatus = (userId: string, defaultStatus: string) =>
@@ -77,7 +77,7 @@ export default function TeamPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((member) => {
-            const status = getStatus(member._id, member.onlineStatus);
+            const status = getStatus(member._id, member.onlineStatus || "online");
             const statusCfg =
               onlineStatusConfig[status as keyof typeof onlineStatusConfig] ||
               onlineStatusConfig.online;
@@ -88,7 +88,7 @@ export default function TeamPage() {
               >
                 <div className="flex items-start gap-3">
                   <Avatar
-                    name={member.name}
+                    name={member.name || "User"}
                     avatar={member.avatar}
                     size="md"
                     status={status}
@@ -96,10 +96,10 @@ export default function TeamPage() {
                   />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-slate-900 dark:text-white text-sm truncate">
-                      {member.name}
+                      {member.name || "User"}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400 truncate mb-2">
-                      {member.email}
+                      {member.email || "No email"}
                     </p>
                     <div className="flex flex-wrap items-center gap-1.5">
                       <RoleBadge role={member.role} />

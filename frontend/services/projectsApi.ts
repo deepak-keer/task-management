@@ -4,9 +4,9 @@ export interface Project {
   _id: string;
   name: string;
   description: string;
-  owner: { _id: string; name: string; email: string; avatar: string };
-  members: Array<{ _id: string; name: string; email: string; avatar: string; role: string; onlineStatus: string }>;
-  columns: Array<{ id: string; name: string; order: number; color: string; archived?: boolean }>;
+  owner: { _id: string; name: string; email: string; avatar: string } | null;
+  members?: Array<{ _id: string; name: string; email: string; avatar: string; role: string; onlineStatus: string }>;
+  columns?: Array<{ id: string; name: string; order: number; color: string; archived?: boolean }>;
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;

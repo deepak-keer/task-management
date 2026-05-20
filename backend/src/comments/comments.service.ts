@@ -70,7 +70,7 @@ export class CommentsService {
           recipient,
           type: 'comment_added',
           message: `${user.name} commented on "${task.title}"`,
-          link: `/projects/${projectId}/tasks/${data.taskId}`,
+          link: `/projects/${projectId}?task=${data.taskId}`,
           meta: { taskId: data.taskId, projectId, commentId: comment._id },
         });
       }
@@ -81,7 +81,7 @@ export class CommentsService {
             recipient: mentionId,
             type: 'mentioned',
             message: `${user.name} mentioned you in a comment`,
-            link: `/projects/${projectId}/tasks/${data.taskId}`,
+            link: `/projects/${projectId}?task=${data.taskId}`,
             meta: { taskId: data.taskId, projectId, commentId: comment._id },
           });
         }

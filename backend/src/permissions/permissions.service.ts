@@ -5,6 +5,32 @@ import { RolePermissions, RolePermissionsDocument } from './role-permissions.sch
 import { UserDocument } from '../users/user.schema';
 import { AppGateway } from '../gateway/app.gateway';
 
+const FEATURE_DEFAULTS: RolePermissions['features'] = {
+  invite_members: true,
+  remove_members: false,
+  view_workspaces: false,
+  manage_workspaces: false,
+  view_boards: true,
+  create_projects: true,
+  delete_projects: false,
+  archive_projects: false,
+  manage_board_members: false,
+  manage_announcements: false,
+  assign_roles: false,
+  view_analytics: true,
+  manage_columns: true,
+  create_tasks: true,
+  delete_own_tasks: true,
+  delete_any_task: false,
+  move_tasks: true,
+  assign_tasks: true,
+  comment_on_tasks: true,
+  view_all_projects: false,
+  export_tasks: false,
+  watch_tasks: true,
+  upload_attachments: true,
+};
+
 @Injectable()
 export class PermissionsService {
   private cache: Map<string, RolePermissionsDocument> = new Map();
@@ -28,6 +54,7 @@ export class PermissionsService {
     const perms = await this.permModel.find().exec();
     const result: Record<string, RolePermissionsDocument> = {};
     for (const p of perms) {
+      await this.ensureFeatureDefaults(p);
       result[p.role] = p;
     }
     return result;
@@ -38,12 +65,27 @@ export class PermissionsService {
 
     const perm = await this.permModel.findOne({ role }).exec();
     if (!perm) {
-      const created = await this.permModel.create({ role });
+      const created = await this.permModel.create({ role, features: FEATURE_DEFAULTS });
       this.cache.set(role, created);
       return created;
     }
+    await this.ensureFeatureDefaults(perm);
     this.cache.set(role, perm);
     return perm;
+  }
+
+  private async ensureFeatureDefaults(perm: RolePermissionsDocument): Promise<void> {
+    const current = (perm.features || {}) as Record<string, boolean>;
+    const missing = Object.entries(FEATURE_DEFAULTS).filter(([feature]) => typeof current[feature] !== 'boolean');
+    if (missing.length === 0) return;
+
+    for (const [feature, value] of missing) {
+      current[feature] = value;
+      perm.set(`features.${feature}`, value);
+    }
+
+    await perm.save();
+    this.cache.delete(perm.role);
   }
 
   async update(

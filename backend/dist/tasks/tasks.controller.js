@@ -29,6 +29,9 @@ let TasksController = class TasksController {
     findOverdue(req) {
         return this.tasksService.findOverdue(req.user._id.toString());
     }
+    exportTasks(projectId, status, assignee, priority, search, req) {
+        return this.tasksService.exportTasks({ projectId, status, assignee, priority, search }, req.user);
+    }
     findOne(id, req) {
         return this.tasksService.findById(id, req.user);
     }
@@ -87,6 +90,18 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], TasksController.prototype, "findOverdue", null);
+__decorate([
+    (0, common_1.Get)('export'),
+    __param(0, (0, common_1.Query)('projectId')),
+    __param(1, (0, common_1.Query)('status')),
+    __param(2, (0, common_1.Query)('assignee')),
+    __param(3, (0, common_1.Query)('priority')),
+    __param(4, (0, common_1.Query)('search')),
+    __param(5, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object]),
+    __metadata("design:returntype", void 0)
+], TasksController.prototype, "exportTasks", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),

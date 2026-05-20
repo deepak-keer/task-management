@@ -20,6 +20,7 @@ const uuid_1 = require("uuid");
 const project_schema_1 = require("./project.schema");
 const task_schema_1 = require("../tasks/task.schema");
 const app_gateway_1 = require("../gateway/app.gateway");
+const permissions_service_1 = require("../permissions/permissions.service");
 const DEFAULT_COLUMNS = [
     { id: 'todo', name: 'To Do', order: 0, color: '#64748b', archived: false },
     { id: 'in_progress', name: 'In Progress', order: 1, color: '#3b82f6', archived: false },
@@ -27,13 +28,20 @@ const DEFAULT_COLUMNS = [
     { id: 'done', name: 'Done', order: 3, color: '#22c55e', archived: false },
 ];
 let ProjectsService = class ProjectsService {
-    constructor(projectModel, taskModel, appGateway) {
+    constructor(projectModel, taskModel, appGateway, permissionsService) {
         this.projectModel = projectModel;
         this.taskModel = taskModel;
         this.appGateway = appGateway;
+        this.permissionsService = permissionsService;
     }
-    canManageColumns(user) {
-        return user.role === 'super_admin';
+    async hasPermission(user, feature) {
+        if (user.role === 'super_admin')
+            return true;
+        const permissions = await this.permissionsService.getForRole(user.role);
+        return !!permissions.features[feature];
+    }
+    async canManageColumns(user) {
+        return this.hasPermission(user, 'manage_columns');
     }
     normalizeColumns(columns) {
         const source = columns && columns.length > 0 ? columns : DEFAULT_COLUMNS;
@@ -70,7 +78,7 @@ let ProjectsService = class ProjectsService {
         return updated;
     }
     async getProjectForColumnUpdate(id, user) {
-        if (!this.canManageColumns(user)) {
+        if (!(await this.canManageColumns(user))) {
             throw new common_1.ForbiddenException('Only admins can manage columns');
         }
         const project = await this.projectModel.findById(id).exec();
@@ -105,19 +113,25 @@ let ProjectsService = class ProjectsService {
     async findAll(user) {
         let filter = {};
         if (user.role !== 'super_admin') {
+            if (!(await this.hasPermission(user, 'view_boards'))) {
+                return [];
+            }
+            const canViewAll = await this.hasPermission(user, 'view_all_projects');
             const assignedProjectIds = await this.taskModel.distinct('project', {
                 assignee: user._id,
             });
             if (assignedProjectIds.length > 0) {
                 await this.projectModel.updateMany({ _id: { $in: assignedProjectIds } }, { $addToSet: { members: user._id } });
             }
-            filter = {
-                isArchived: false,
-                $or: [
-                    { members: user._id },
-                    { _id: { $in: assignedProjectIds } },
-                ],
-            };
+            filter = canViewAll
+                ? { isArchived: false }
+                : {
+                    isArchived: false,
+                    $or: [
+                        { members: user._id },
+                        { _id: { $in: assignedProjectIds } },
+                    ],
+                };
         }
         return this.projectModel
             .find(filter)
@@ -127,6 +141,9 @@ let ProjectsService = class ProjectsService {
             .exec();
     }
     async findById(id, user) {
+        if (!(await this.hasPermission(user, 'view_boards'))) {
+            throw new common_1.ForbiddenException('Cannot view boards');
+        }
         const project = await this.projectModel
             .findById(id)
             .populate('owner', 'name email avatar')
@@ -150,6 +167,9 @@ let ProjectsService = class ProjectsService {
         return this.ensureColumns(project);
     }
     async create(data, user) {
+        if (!(await this.hasPermission(user, 'create_projects'))) {
+            throw new common_1.ForbiddenException('Cannot create boards');
+        }
         const project = await this.projectModel.create({
             name: data.name,
             description: data.description || '',
@@ -256,8 +276,8 @@ let ProjectsService = class ProjectsService {
         const project = await this.projectModel.findById(id).exec();
         if (!project)
             throw new common_1.NotFoundException('Project not found');
-        if (project.owner.toString() !== user._id.toString() && user.role !== 'super_admin') {
-            throw new common_1.ForbiddenException('Only the project owner can archive');
+        if (!(await this.hasPermission(user, 'archive_projects'))) {
+            throw new common_1.ForbiddenException('Cannot archive boards');
         }
         const updated = await this.projectModel
             .findByIdAndUpdate(id, { isArchived: true }, { new: true })
@@ -270,26 +290,40 @@ let ProjectsService = class ProjectsService {
         const project = await this.projectModel.findById(id).exec();
         if (!project)
             throw new common_1.NotFoundException('Project not found');
-        if (project.owner.toString() !== user._id.toString() && user.role !== 'super_admin') {
-            throw new common_1.ForbiddenException('Only the project owner can delete');
+        if (!(await this.hasPermission(user, 'delete_projects'))) {
+            throw new common_1.ForbiddenException('Cannot delete boards');
         }
         await this.projectModel.deleteOne({ _id: id });
     }
     async addMember(projectId, userId, requester) {
+        if (!(await this.hasPermission(requester, 'manage_board_members'))) {
+            throw new common_1.ForbiddenException('Cannot manage board members');
+        }
         const project = await this.projectModel.findById(projectId).exec();
         if (!project)
             throw new common_1.NotFoundException('Project not found');
-        if (!project.members.includes(new mongoose_2.Types.ObjectId(userId))) {
+        const isAlreadyMember = project.members.some((memberId) => memberId.toString() === userId);
+        if (!isAlreadyMember) {
             await this.projectModel.updateOne({ _id: projectId }, { $addToSet: { members: new mongoose_2.Types.ObjectId(userId) } });
         }
-        return this.findById(projectId, requester);
+        const updated = await this.findById(projectId, requester);
+        this.appGateway.emitToProject(projectId, 'project-updated', updated);
+        return updated;
     }
     async removeMember(projectId, userId, requester) {
+        if (!(await this.hasPermission(requester, 'manage_board_members'))) {
+            throw new common_1.ForbiddenException('Cannot manage board members');
+        }
         const project = await this.projectModel.findById(projectId).exec();
         if (!project)
             throw new common_1.NotFoundException('Project not found');
+        if (project.owner.toString() === userId) {
+            throw new common_1.BadRequestException('Board owner cannot be removed');
+        }
         await this.projectModel.updateOne({ _id: projectId }, { $pull: { members: new mongoose_2.Types.ObjectId(userId) } });
-        return this.findById(projectId, requester);
+        const updated = await this.findById(projectId, requester);
+        this.appGateway.emitToProject(projectId, 'project-updated', updated);
+        return updated;
     }
 };
 exports.ProjectsService = ProjectsService;
@@ -299,6 +333,7 @@ exports.ProjectsService = ProjectsService = __decorate([
     __param(1, (0, mongoose_1.InjectModel)(task_schema_1.Task.name)),
     __metadata("design:paramtypes", [mongoose_2.Model,
         mongoose_2.Model,
-        app_gateway_1.AppGateway])
+        app_gateway_1.AppGateway,
+        permissions_service_1.PermissionsService])
 ], ProjectsService);
 //# sourceMappingURL=projects.service.js.map

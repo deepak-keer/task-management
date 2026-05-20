@@ -102,11 +102,11 @@ export default function AdminUsersPage() {
       {/* Tabs */}
       <div className="flex gap-1 overflow-x-auto border-b border-slate-200 dark:border-slate-700">
         <button onClick={() => setActiveTab('all')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === 'all' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all duration-200 ${activeTab === 'all' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           <Users className="w-4 h-4" /> All Users
         </button>
         <button onClick={() => setActiveTab('pending')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === 'pending' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all duration-200 ${activeTab === 'pending' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           <Clock className="w-4 h-4" /> Pending
           {pending.length > 0 && (
             <span className="ml-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{pending.length}</span>
@@ -116,7 +116,7 @@ export default function AdminUsersPage() {
 
       {/* Filters (all tab only) */}
       {activeTab === 'all' && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+        <div className="grid grid-cols-1 gap-3 tab-panel-transition sm:grid-cols-[minmax(0,1fr)_auto_auto]">
           <div className="relative min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input type="text" placeholder="Search by name or email…" value={search} onChange={(e) => setSearch(e.target.value)}
@@ -140,7 +140,7 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      <div className="space-y-3 md:hidden">
+      <div key={`mobile-${activeTab}`} className="space-y-3 tab-panel-transition md:hidden">
         {isLoading && Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
             <Skeleton className="h-5 w-2/3" />
@@ -192,7 +192,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Table */}
-      <div className="hidden bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden md:block">
+      <div key={`table-${activeTab}`} className="hidden bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden tab-panel-transition md:block">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-sm">
             <thead>

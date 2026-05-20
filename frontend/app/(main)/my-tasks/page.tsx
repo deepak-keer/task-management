@@ -25,6 +25,14 @@ export default function MyTasksPage() {
     "status",
   );
 
+  const getTaskProjectId = (task: (typeof tasks)[number]) =>
+    typeof task.project === "string" ? task.project : task.project?._id;
+
+  const getTaskHref = (task: (typeof tasks)[number]) => {
+    const projectId = getTaskProjectId(task);
+    return projectId ? `/projects/${projectId}?task=${task._id}` : "/my-tasks";
+  };
+
   const filtered = tasks
     .filter(
       (t) =>
@@ -140,10 +148,6 @@ export default function MyTasksPage() {
             </h3>
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700">
               {groupTasks.map((task) => {
-                const projectId =
-                  typeof task.project === "string"
-                    ? task.project
-                    : (task.project as { _id: string })._id;
                 const isOverdue =
                   task.dueDate &&
                   new Date(task.dueDate) < new Date() &&
@@ -151,7 +155,7 @@ export default function MyTasksPage() {
                 return (
                   <Link
                     key={task._id}
-                    href={`/projects/${projectId}/tasks/${task._id}`}
+                    href={getTaskHref(task)}
                     className="flex flex-wrap items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors sm:flex-nowrap sm:gap-4"
                   >
                     <div
@@ -162,7 +166,7 @@ export default function MyTasksPage() {
                     >
                       {task.title}
                     </span>
-                    {typeof task.project === "object" && (
+                    {task.project && typeof task.project === "object" && (
                       <span className="text-xs text-slate-400 hidden sm:block">
                         {(task.project as { name: string }).name}
                       </span>

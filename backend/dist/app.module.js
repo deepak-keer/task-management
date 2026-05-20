@@ -22,6 +22,7 @@ const permissions_module_1 = require("./permissions/permissions.module");
 const gateway_module_1 = require("./gateway/gateway.module");
 const scheduler_module_1 = require("./scheduler/scheduler.module");
 const super_admin_module_1 = require("./super-admin/super-admin.module");
+const announcements_module_1 = require("./announcements/announcements.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -48,6 +49,7 @@ exports.AppModule = AppModule = __decorate([
             gateway_module_1.GatewayModule,
             scheduler_module_1.SchedulerModule,
             super_admin_module_1.SuperAdminModule,
+            announcements_module_1.AnnouncementsModule,
         ],
     })
 ], AppModule);

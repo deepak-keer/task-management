@@ -36,6 +36,7 @@ __decorate([
             'user_rejected',
             'permission_changed',
             'task_watched',
+            'announcement',
         ],
         required: true,
     }),

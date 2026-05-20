@@ -45,11 +45,16 @@ export declare class SuperAdminService {
         };
         tasks: {
             total: number;
-            byStatus: any[];
+            byStatus: {
+                _id: any;
+                name: string;
+                count: any;
+            }[];
             byPriority: any[];
         };
     }>;
     getAllProjects(): Promise<ProjectDocument[]>;
     archiveProject(id: string): Promise<ProjectDocument>;
+    restoreProject(id: string): Promise<ProjectDocument>;
     deleteProject(id: string): Promise<void>;
 }

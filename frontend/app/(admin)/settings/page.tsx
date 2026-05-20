@@ -7,14 +7,18 @@ import {
   useGetInvitesQuery, useCreateInviteMutation,
   useRevokeInviteMutation, useDeleteInviteMutation,
 } from '../../../services/allApis';
+import AnnouncementCenter from '../../../components/announcements/AnnouncementCenter';
+import { usePermission } from '../../../hooks/usePermission';
 import { Button, Avatar, RoleBadge, StatusBadge, Modal } from '../../../components/ui/index';
-import { Users, Link2, Plus, Copy, X, Check, Settings } from 'lucide-react';
+import { Users, Link2, Plus, Copy, X, Check, Settings, Megaphone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatDate, formatRelative } from '../../../lib/utils';
 
 export default function SettingsPage() {
   const { user } = useAppSelector((s) => s.auth);
-  const [activeTab, setActiveTab] = useState<'members' | 'invites'>('members');
+  const canInviteMembers = usePermission('invite_members');
+  const canManageAnnouncements = usePermission('manage_announcements');
+  const [activeTab, setActiveTab] = useState<'members' | 'invites' | 'announcements'>('members');
   const [showCreateInvite, setShowCreateInvite] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -36,6 +40,10 @@ export default function SettingsPage() {
 
   const handleCreateInvite = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canInviteMembers) {
+      toast.error('You do not have permission to invite members');
+      return;
+    }
     try {
       await createInvite({
         role: inviteForm.role as 'admin' | 'member',
@@ -59,7 +67,8 @@ export default function SettingsPage() {
 
   const tabs = [
     { key: 'members', label: 'Members', icon: Users },
-    { key: 'invites', label: 'Invite Links', icon: Link2 },
+    ...(canInviteMembers ? [{ key: 'invites', label: 'Invite Links', icon: Link2 } as const] : []),
+    ...(canManageAnnouncements ? [{ key: 'announcements', label: 'Announcements', icon: Megaphone } as const] : []),
   ] as const;
 
   return (
@@ -75,7 +84,7 @@ export default function SettingsPage() {
           <button
             key={key}
             onClick={() => setActiveTab(key)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all duration-200 ${
               activeTab === key
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400'
                 : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
@@ -89,12 +98,12 @@ export default function SettingsPage() {
 
       {/* Members tab */}
       {activeTab === 'members' && (
-        <div>
+        <div key="members-tab" className="tab-panel-transition">
           <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="font-semibold text-slate-900 dark:text-white">Workspace Members ({users.length})</h2>
-            <Button size="sm" onClick={() => setShowCreateInvite(true)}>
+            {canInviteMembers && <Button size="sm" onClick={() => setShowCreateInvite(true)}>
               <Plus className="w-3.5 h-3.5" /> Invite Member
-            </Button>
+            </Button>}
           </div>
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700">
             {users.map((u) => (
@@ -114,12 +123,12 @@ export default function SettingsPage() {
 
       {/* Invites tab */}
       {activeTab === 'invites' && (
-        <div>
+        <div key="invites-tab" className="tab-panel-transition">
           <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="font-semibold text-slate-900 dark:text-white">Invite Links</h2>
-            <Button size="sm" onClick={() => setShowCreateInvite(true)}>
+            {canInviteMembers && <Button size="sm" onClick={() => setShowCreateInvite(true)}>
               <Plus className="w-3.5 h-3.5" /> Create Link
-            </Button>
+            </Button>}
           </div>
 
           {invites.length === 0 ? (
@@ -172,8 +181,14 @@ export default function SettingsPage() {
         </div>
       )}
 
+      {activeTab === 'announcements' && (
+        <div key="announcements-tab" className="tab-panel-transition">
+          <AnnouncementCenter />
+        </div>
+      )}
+
       {/* Create invite modal */}
-      <Modal open={showCreateInvite} onClose={() => setShowCreateInvite(false)} title="Create Invite Link" size="sm">
+      <Modal open={showCreateInvite && canInviteMembers} onClose={() => setShowCreateInvite(false)} title="Create Invite Link" size="sm">
         <form onSubmit={handleCreateInvite} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Role</label>

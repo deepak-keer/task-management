@@ -35,7 +35,7 @@ export class DueDateScheduler {
           recipient: assignee._id.toString(),
           type: 'due_reminder',
           message: `Task "${task.title}" is due in ${hoursLeft} hour${hoursLeft !== 1 ? 's' : ''}`,
-          link: `/projects/${task.project}/tasks/${task._id}`,
+          link: `/projects/${task.project}?task=${task._id}`,
           meta: { taskId: task._id, dueDate: task.dueDate },
         });
       }

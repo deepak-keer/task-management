@@ -20,9 +20,14 @@ export interface User {
 export interface RolePermissions {
   invite_members: boolean;
   remove_members: boolean;
+  view_workspaces: boolean;
+  manage_workspaces: boolean;
+  view_boards: boolean;
   create_projects: boolean;
   delete_projects: boolean;
   archive_projects: boolean;
+  manage_board_members: boolean;
+  manage_announcements: boolean;
   assign_roles: boolean;
   view_analytics: boolean;
   manage_columns: boolean;

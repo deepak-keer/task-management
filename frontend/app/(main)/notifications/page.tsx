@@ -79,7 +79,7 @@ export default function NotificationsPage() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
               filter === f
                 ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
                 : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
@@ -91,7 +91,7 @@ export default function NotificationsPage() {
       </div>
 
       {/* List */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700 overflow-hidden">
+      <div key={filter} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700 overflow-hidden tab-panel-transition">
         {isLoading &&
           Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="flex items-start gap-3 p-4">

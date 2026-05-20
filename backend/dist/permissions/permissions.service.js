@@ -18,6 +18,31 @@ const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
 const role_permissions_schema_1 = require("./role-permissions.schema");
 const app_gateway_1 = require("../gateway/app.gateway");
+const FEATURE_DEFAULTS = {
+    invite_members: true,
+    remove_members: false,
+    view_workspaces: false,
+    manage_workspaces: false,
+    view_boards: true,
+    create_projects: true,
+    delete_projects: false,
+    archive_projects: false,
+    manage_board_members: false,
+    manage_announcements: false,
+    assign_roles: false,
+    view_analytics: true,
+    manage_columns: true,
+    create_tasks: true,
+    delete_own_tasks: true,
+    delete_any_task: false,
+    move_tasks: true,
+    assign_tasks: true,
+    comment_on_tasks: true,
+    view_all_projects: false,
+    export_tasks: false,
+    watch_tasks: true,
+    upload_attachments: true,
+};
 let PermissionsService = class PermissionsService {
     constructor(permModel, appGateway) {
         this.permModel = permModel;
@@ -37,6 +62,7 @@ let PermissionsService = class PermissionsService {
         const perms = await this.permModel.find().exec();
         const result = {};
         for (const p of perms) {
+            await this.ensureFeatureDefaults(p);
             result[p.role] = p;
         }
         return result;
@@ -46,12 +72,25 @@ let PermissionsService = class PermissionsService {
             return this.cache.get(role);
         const perm = await this.permModel.findOne({ role }).exec();
         if (!perm) {
-            const created = await this.permModel.create({ role });
+            const created = await this.permModel.create({ role, features: FEATURE_DEFAULTS });
             this.cache.set(role, created);
             return created;
         }
+        await this.ensureFeatureDefaults(perm);
         this.cache.set(role, perm);
         return perm;
+    }
+    async ensureFeatureDefaults(perm) {
+        const current = (perm.features || {});
+        const missing = Object.entries(FEATURE_DEFAULTS).filter(([feature]) => typeof current[feature] !== 'boolean');
+        if (missing.length === 0)
+            return;
+        for (const [feature, value] of missing) {
+            current[feature] = value;
+            perm.set(`features.${feature}`, value);
+        }
+        await perm.save();
+        this.cache.delete(perm.role);
     }
     async update(role, features, updatedBy) {
         const perm = await this.permModel.findOne({ role }).exec();

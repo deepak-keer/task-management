@@ -41,20 +41,20 @@ export default function CommandPalette() {
   }, [open]);
 
   const filteredProjects = projects.filter((p) =>
-    p.name.toLowerCase().includes(query.toLowerCase())
+    (p.name || '').toLowerCase().includes(query.toLowerCase())
   ).slice(0, 4);
 
   const filteredUsers = users.filter((u) =>
-    u.name.toLowerCase().includes(query.toLowerCase()) ||
-    u.email.toLowerCase().includes(query.toLowerCase())
+    (u.name || '').toLowerCase().includes(query.toLowerCase()) ||
+    (u.email || '').toLowerCase().includes(query.toLowerCase())
   ).slice(0, 3);
 
   const allItems = [
     ...filteredProjects.map((p) => ({
       type: 'project',
       id: p._id,
-      label: p.name,
-      sub: `${p.members.length} members`,
+      label: p.name || 'Untitled board',
+      sub: `${p.members?.length || 0} members`,
       href: `/projects/${p._id}`,
       icon: FolderOpen,
     })),
@@ -77,12 +77,12 @@ export default function CommandPalette() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4"
+      className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[15vh] animate-fade-in"
       onClick={() => dispatch(setCommandPaletteOpen(false))}
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-scale-in"
+        className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-modal-in will-change-transform dark:border-slate-700 dark:bg-slate-800"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Input */}
@@ -101,7 +101,7 @@ export default function CommandPalette() {
             }}
             className="flex-1 text-sm bg-transparent text-slate-900 dark:text-white placeholder-slate-400 outline-none"
           />
-          <button onClick={() => dispatch(setCommandPaletteOpen(false))} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <button type="button" onClick={() => dispatch(setCommandPaletteOpen(false))} className="text-slate-400 transition-colors hover:text-slate-600 dark:hover:text-slate-200">
             <X className="w-4 h-4" />
           </button>
         </div>

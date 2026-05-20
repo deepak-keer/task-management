@@ -56,7 +56,7 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       const payload = this.jwtService.verify<{ userId: string; role: string }>(token);
-      const user = await this.userModel.findById(payload.userId).select('status').exec();
+      const user = await this.userModel.findById(payload.userId).select('status role').exec();
       if (!user || user.status !== 'active') {
         if (user?.status === 'banned') {
           client.emit('user-banned', { userId: payload.userId });
@@ -68,10 +68,11 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       client.userId = payload.userId;
-      client.userRole = payload.role;
+      client.userRole = user.role;
 
       // Join user's personal room
       client.join(`user:${payload.userId}`);
+      client.join(`role:${user.role}`);
 
       // Track socket
       if (!this.userSocketMap.has(payload.userId)) {
@@ -149,6 +150,10 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   emitToUser(userId: string, event: string, data: unknown) {
     this.server.to(`user:${userId}`).emit(event, data);
+  }
+
+  emitToRole(role: string, event: string, data: unknown) {
+    this.server.to(`role:${role}`).emit(event, data);
   }
 
   forceLogoutUser(userId: string, event: string, data: unknown) {

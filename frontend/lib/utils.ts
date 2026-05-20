@@ -69,4 +69,5 @@ export const notificationIcons: Record<string, string> = {
   user_rejected: '❌',
   permission_changed: '🔐',
   task_watched: '👁',
+  announcement: '!',
 };

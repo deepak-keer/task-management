@@ -12,13 +12,15 @@ import {
   type Project,
 } from '../../../../services/projectsApi';
 import { Button, Modal, Skeleton } from '../../../../components/ui/index';
-import { Archive, ArrowDown, ArrowUp, Edit2, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { usePermission } from '../../../../hooks/usePermission';
+import { Archive, ArrowDown, ArrowUp, Columns3, Edit2, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-type Column = Project['columns'][number];
+type Column = NonNullable<Project['columns']>[number];
 
 export default function ColumnsAdminPage() {
   const { data: projects = [], isLoading } = useGetProjectsQuery();
+  const canManageColumns = usePermission('manage_columns');
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [modal, setModal] = useState<{ mode: 'create' | 'edit'; column?: Column } | null>(null);
   const [form, setForm] = useState({ name: '', color: '#3b82f6' });
@@ -51,11 +53,13 @@ export default function ColumnsAdminPage() {
   );
 
   const openCreate = () => {
+    if (!canManageColumns) return;
     setForm({ name: '', color: '#3b82f6' });
     setModal({ mode: 'create' });
   };
 
   const openEdit = (column: Column) => {
+    if (!canManageColumns) return;
     setForm({ name: column.name, color: column.color });
     setModal({ mode: 'edit', column });
   };
@@ -67,6 +71,10 @@ export default function ColumnsAdminPage() {
 
   const saveColumn = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (!canManageColumns) {
+      toast.error('You do not have permission to manage columns');
+      return;
+    }
     if (!projectId) return;
     if (!form.name.trim()) {
       toast.error('Column name is required');
@@ -96,6 +104,10 @@ export default function ColumnsAdminPage() {
   };
 
   const removeColumn = async (column: Column) => {
+    if (!canManageColumns) {
+      toast.error('You do not have permission to manage columns');
+      return;
+    }
     if (!projectId) return;
     try {
       await deleteColumn({ projectId, columnId: column.id }).unwrap();
@@ -106,6 +118,10 @@ export default function ColumnsAdminPage() {
   };
 
   const archive = async (column: Column) => {
+    if (!canManageColumns) {
+      toast.error('You do not have permission to manage columns');
+      return;
+    }
     if (!projectId) return;
     try {
       await archiveColumn({ projectId, columnId: column.id }).unwrap();
@@ -116,6 +132,10 @@ export default function ColumnsAdminPage() {
   };
 
   const restore = async (column: Column) => {
+    if (!canManageColumns) {
+      toast.error('You do not have permission to manage columns');
+      return;
+    }
     if (!projectId) return;
     try {
       await restoreColumn({ projectId, columnId: column.id }).unwrap();
@@ -126,6 +146,10 @@ export default function ColumnsAdminPage() {
   };
 
   const moveColumn = async (columnId: string, direction: -1 | 1) => {
+    if (!canManageColumns) {
+      toast.error('You do not have permission to manage columns');
+      return;
+    }
     if (!projectId) return;
     const next = [...activeColumns];
     const index = next.findIndex((column) => column.id === columnId);
@@ -150,27 +174,101 @@ export default function ColumnsAdminPage() {
     );
   }
 
+  if (!canManageColumns) {
+    return (
+      <div className="mx-auto max-w-3xl rounded-xl border border-slate-200 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-800">
+        <Columns3 className="mx-auto mb-3 h-8 w-8 text-slate-400" />
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-white">Column access disabled</h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Your role does not have permission to manage board columns.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">Columns</h1>
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(220px,320px)_auto] sm:items-center">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Columns</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Manage board workflow columns.</p>
         </div>
         <select
           value={selectedProject?._id || ''}
           onChange={(event) => setSelectedProjectId(event.target.value)}
-          className="min-w-[220px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+          className="min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition-colors focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
         >
           {projects.map((project) => (
             <option key={project._id} value={project._id}>{project.name}</option>
           ))}
         </select>
-        <Button size="sm" onClick={openCreate} disabled={!projectId}>
+        <Button size="sm" onClick={openCreate} disabled={!projectId} className="justify-center">
           <Plus className="h-4 w-4" /> Column
         </Button>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      <div className="space-y-3 md:hidden">
+        {activeColumns.map((column, index) => (
+          <div key={column.id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-base font-semibold text-slate-900 dark:text-white">{column.name}</p>
+                <div className="mt-2 flex items-center gap-2 text-sm text-slate-500">
+                  <span className="h-4 w-4 rounded-full ring-2 ring-white dark:ring-slate-900" style={{ backgroundColor: column.color }} />
+                  <span className="font-mono">{column.color}</span>
+                </div>
+              </div>
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                #{index + 1}
+              </span>
+            </div>
+            <div className="mt-4 grid grid-cols-5 gap-2">
+              <button
+                type="button"
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-800 dark:hover:bg-slate-800"
+                onClick={() => moveColumn(column.id, -1)}
+                disabled={index === 0}
+                title="Move up"
+              >
+                <ArrowUp className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-800 dark:hover:bg-slate-800"
+                onClick={() => moveColumn(column.id, 1)}
+                disabled={index === activeColumns.length - 1}
+                title="Move down"
+              >
+                <ArrowDown className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
+                onClick={() => openEdit(column)}
+                title="Edit"
+              >
+                <Edit2 className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
+                onClick={() => archive(column)}
+                title="Archive"
+              >
+                <Archive className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-red-200 text-red-500 transition-colors hover:bg-red-50 dark:border-red-950/50 dark:hover:bg-red-950/30"
+                onClick={() => removeColumn(column)}
+                title="Delete"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hidden overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 md:block">
         <div className="grid grid-cols-[1fr_120px_180px] gap-3 border-b border-slate-200 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:border-slate-800">
           <span>Name</span>
           <span>Color</span>
@@ -184,19 +282,19 @@ export default function ColumnsAdminPage() {
               {column.color}
             </span>
             <div className="flex justify-end gap-1">
-              <button className="rounded p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => moveColumn(column.id, -1)} disabled={index === 0}>
+              <button className="rounded p-1.5 text-slate-400 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-slate-800" onClick={() => moveColumn(column.id, -1)} disabled={index === 0} title="Move up">
                 <ArrowUp className="h-4 w-4" />
               </button>
-              <button className="rounded p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => moveColumn(column.id, 1)} disabled={index === activeColumns.length - 1}>
+              <button className="rounded p-1.5 text-slate-400 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-slate-800" onClick={() => moveColumn(column.id, 1)} disabled={index === activeColumns.length - 1} title="Move down">
                 <ArrowDown className="h-4 w-4" />
               </button>
-              <button className="rounded p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => openEdit(column)}>
+              <button className="rounded p-1.5 text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => openEdit(column)} title="Edit">
                 <Edit2 className="h-4 w-4" />
               </button>
-              <button className="rounded p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => archive(column)}>
+              <button className="rounded p-1.5 text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => archive(column)} title="Archive">
                 <Archive className="h-4 w-4" />
               </button>
-              <button className="rounded p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30" onClick={() => removeColumn(column)}>
+              <button className="rounded p-1.5 text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-950/30" onClick={() => removeColumn(column)} title="Delete">
                 <Trash2 className="h-4 w-4" />
               </button>
             </div>

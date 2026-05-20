@@ -6,6 +6,7 @@ import { Project, ProjectDocument } from './project.schema';
 import { Task, TaskDocument } from '../tasks/task.schema';
 import { UserDocument } from '../users/user.schema';
 import { AppGateway } from '../gateway/app.gateway';
+import { PermissionsService } from '../permissions/permissions.service';
 
 const DEFAULT_COLUMNS = [
   { id: 'todo', name: 'To Do', order: 0, color: '#64748b', archived: false },
@@ -22,10 +23,17 @@ export class ProjectsService {
     @InjectModel(Project.name) private projectModel: Model<ProjectDocument>,
     @InjectModel(Task.name) private taskModel: Model<TaskDocument>,
     private appGateway: AppGateway,
+    private permissionsService: PermissionsService,
   ) {}
 
-  private canManageColumns(user: UserDocument): boolean {
-    return user.role === 'super_admin';
+  private async hasPermission(user: UserDocument, feature: string): Promise<boolean> {
+    if (user.role === 'super_admin') return true;
+    const permissions = await this.permissionsService.getForRole(user.role);
+    return !!(permissions.features as Record<string, boolean>)[feature];
+  }
+
+  private async canManageColumns(user: UserDocument): Promise<boolean> {
+    return this.hasPermission(user, 'manage_columns');
   }
 
   private normalizeColumns(columns?: ProjectColumn[]): ProjectColumn[] {
@@ -76,7 +84,7 @@ export class ProjectsService {
   }
 
   private async getProjectForColumnUpdate(id: string, user: UserDocument): Promise<ProjectDocument> {
-    if (!this.canManageColumns(user)) {
+    if (!(await this.canManageColumns(user))) {
       throw new ForbiddenException('Only admins can manage columns');
     }
 
@@ -117,6 +125,10 @@ export class ProjectsService {
     let filter: Record<string, unknown> = {};
 
     if (user.role !== 'super_admin') {
+      if (!(await this.hasPermission(user, 'view_boards'))) {
+        return [];
+      }
+      const canViewAll = await this.hasPermission(user, 'view_all_projects');
       const assignedProjectIds = await this.taskModel.distinct('project', {
         assignee: user._id,
       });
@@ -128,13 +140,15 @@ export class ProjectsService {
         );
       }
 
-      filter = {
-        isArchived: false,
-        $or: [
-          { members: user._id },
-          { _id: { $in: assignedProjectIds } },
-        ],
-      };
+      filter = canViewAll
+        ? { isArchived: false }
+        : {
+            isArchived: false,
+            $or: [
+              { members: user._id },
+              { _id: { $in: assignedProjectIds } },
+            ],
+          };
     }
 
     return this.projectModel
@@ -146,6 +160,10 @@ export class ProjectsService {
   }
 
   async findById(id: string, user: UserDocument): Promise<ProjectDocument> {
+    if (!(await this.hasPermission(user, 'view_boards'))) {
+      throw new ForbiddenException('Cannot view boards');
+    }
+
     const project = await this.projectModel
       .findById(id)
       .populate('owner', 'name email avatar')
@@ -184,6 +202,10 @@ export class ProjectsService {
     data: { name: string; description?: string },
     user: UserDocument,
   ): Promise<ProjectDocument> {
+    if (!(await this.hasPermission(user, 'create_projects'))) {
+      throw new ForbiddenException('Cannot create boards');
+    }
+
     const project = await this.projectModel.create({
       name: data.name,
       description: data.description || '',
@@ -317,8 +339,8 @@ export class ProjectsService {
     const project = await this.projectModel.findById(id).exec();
     if (!project) throw new NotFoundException('Project not found');
 
-    if (project.owner.toString() !== user._id.toString() && user.role !== 'super_admin') {
-      throw new ForbiddenException('Only the project owner can archive');
+    if (!(await this.hasPermission(user, 'archive_projects'))) {
+      throw new ForbiddenException('Cannot archive boards');
     }
 
     const updated = await this.projectModel
@@ -332,36 +354,52 @@ export class ProjectsService {
     const project = await this.projectModel.findById(id).exec();
     if (!project) throw new NotFoundException('Project not found');
 
-    if (project.owner.toString() !== user._id.toString() && user.role !== 'super_admin') {
-      throw new ForbiddenException('Only the project owner can delete');
+    if (!(await this.hasPermission(user, 'delete_projects'))) {
+      throw new ForbiddenException('Cannot delete boards');
     }
 
     await this.projectModel.deleteOne({ _id: id });
   }
 
   async addMember(projectId: string, userId: string, requester: UserDocument): Promise<ProjectDocument> {
+    if (!(await this.hasPermission(requester, 'manage_board_members'))) {
+      throw new ForbiddenException('Cannot manage board members');
+    }
+
     const project = await this.projectModel.findById(projectId).exec();
     if (!project) throw new NotFoundException('Project not found');
 
-    if (!project.members.includes(new Types.ObjectId(userId))) {
+    const isAlreadyMember = project.members.some((memberId) => memberId.toString() === userId);
+    if (!isAlreadyMember) {
       await this.projectModel.updateOne(
         { _id: projectId },
         { $addToSet: { members: new Types.ObjectId(userId) } },
       );
     }
 
-    return this.findById(projectId, requester);
+    const updated = await this.findById(projectId, requester);
+    this.appGateway.emitToProject(projectId, 'project-updated', updated);
+    return updated;
   }
 
   async removeMember(projectId: string, userId: string, requester: UserDocument): Promise<ProjectDocument> {
+    if (!(await this.hasPermission(requester, 'manage_board_members'))) {
+      throw new ForbiddenException('Cannot manage board members');
+    }
+
     const project = await this.projectModel.findById(projectId).exec();
     if (!project) throw new NotFoundException('Project not found');
+    if (project.owner.toString() === userId) {
+      throw new BadRequestException('Board owner cannot be removed');
+    }
 
     await this.projectModel.updateOne(
       { _id: projectId },
       { $pull: { members: new Types.ObjectId(userId) } },
     );
 
-    return this.findById(projectId, requester);
+    const updated = await this.findById(projectId, requester);
+    this.appGateway.emitToProject(projectId, 'project-updated', updated);
+    return updated;
   }
 }

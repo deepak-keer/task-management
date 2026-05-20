@@ -51,6 +51,13 @@ export default function CalendarPage() {
   const handlePrev = () => setCurrentDate(new Date(year, month - 1, 1));
   const handleNext = () => setCurrentDate(new Date(year, month + 1, 1));
   const handleToday = () => setCurrentDate(new Date());
+  const getTaskProjectId = (task: (typeof tasks)[number]) =>
+    typeof task.project === "string" ? task.project : task.project?._id;
+
+  const openTask = (task: (typeof tasks)[number]) => {
+    const projectId = getTaskProjectId(task);
+    router.push(projectId ? `/projects/${projectId}?task=${task._id}` : "/my-tasks");
+  };
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
@@ -156,18 +163,10 @@ export default function CalendarPage() {
                           priorityConfig[
                             task.priority as keyof typeof priorityConfig
                           ];
-                        const projectId =
-                          typeof task.project === "string"
-                            ? task.project
-                            : (task.project as { _id: string })._id;
                         return (
                           <button
                             key={task._id}
-                            onClick={() =>
-                              router.push(
-                                `/projects/${projectId}/tasks/${task._id}`,
-                              )
-                            }
+                            onClick={() => openTask(task)}
                             className={`w-full text-left text-[10px] font-medium px-1.5 py-0.5 rounded truncate ${pCfg?.bg || "bg-blue-100"} ${pCfg?.color || "text-blue-700"} hover:opacity-80 transition-opacity`}
                           >
                             {task.title}

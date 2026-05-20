@@ -12,6 +12,12 @@ export declare class TasksController {
     findOverdue(req: {
         user: UserDocument;
     }): Promise<import("./task.schema").TaskDocument[]>;
+    exportTasks(projectId: string | undefined, status: string | undefined, assignee: string | undefined, priority: string | undefined, search: string | undefined, req: {
+        user: UserDocument;
+    }): Promise<{
+        filename: string;
+        rows: Array<Record<string, string | number>>;
+    }>;
     findOne(id: string, req: {
         user: UserDocument;
     }): Promise<import("./task.schema").TaskDocument>;

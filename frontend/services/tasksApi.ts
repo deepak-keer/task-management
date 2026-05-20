@@ -17,6 +17,11 @@ type CreateTaskInput = Partial<TaskCard> & {
   assigneeId?: string;
 };
 
+export type TaskExportResponse = {
+  filename: string;
+  rows: Array<Record<string, string | number>>;
+};
+
 export const tasksApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getTasks: builder.query<TaskCard[], TaskFilters>({
@@ -53,6 +58,9 @@ export const tasksApi = baseApi.injectEndpoints({
       query: (id) => `/tasks/${id}`,
       providesTags: (_r, _e, id) => [{ type: 'Task', id }],
     }),
+    exportTasks: builder.query<TaskExportResponse, TaskFilters>({
+      query: (params) => ({ url: '/tasks/export', params }),
+    }),
     createTask: builder.mutation<TaskCard, CreateTaskInput>({
       query: (body) => ({ url: '/tasks', method: 'POST', body }),
       invalidatesTags: [
@@ -67,6 +75,7 @@ export const tasksApi = baseApi.injectEndpoints({
     }),
     moveTask: builder.mutation<TaskCard, { id: string; column: string; status: string; order: number }>({
       query: ({ id, ...body }) => ({ url: `/tasks/${id}/move`, method: 'PATCH', body }),
+      invalidatesTags: [{ type: 'Task', id: 'LIST' }],
     }),
     deleteTask: builder.mutation<void, string>({
       query: (id) => ({ url: `/tasks/${id}`, method: 'DELETE' }),
@@ -104,6 +113,7 @@ export const {
   useGetMyTasksQuery,
   useGetOverdueTasksQuery,
   useGetTaskQuery,
+  useLazyExportTasksQuery,
   useCreateTaskMutation,
   useUpdateTaskMutation,
   useMoveTaskMutation,

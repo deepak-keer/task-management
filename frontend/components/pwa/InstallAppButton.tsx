@@ -13,7 +13,6 @@ export default function InstallAppButton() {
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event: Event) => {
-      event.preventDefault();
       setInstallPrompt(event as BeforeInstallPromptEvent);
     };
 

@@ -108,7 +108,7 @@ export class TasksService {
         recipient,
         type,
         message,
-        link: `/projects/${projectId}/tasks/${task._id}`,
+        link: `/projects/${projectId}?task=${task._id}`,
         meta: { taskId: task._id, projectId, ...meta },
       });
     }
@@ -138,17 +138,62 @@ export class TasksService {
       .exec();
   }
 
+  async exportTasks(query: {
+    projectId?: string;
+    status?: string;
+    assignee?: string;
+    priority?: string;
+    search?: string;
+  }, user: UserDocument): Promise<{ filename: string; rows: Array<Record<string, string | number>> }> {
+    if (!(await this.hasPermission(user, 'export_tasks'))) {
+      throw new ForbiddenException('Cannot export tasks');
+    }
+
+    const tasks = await this.findAll(query, user);
+    const projectName =
+      query.projectId
+        ? (await this.projectModel.findById(query.projectId).select('name').lean().exec())?.name || 'board'
+        : 'tasks';
+
+    const rows = tasks.map((task) => {
+      const assignee = task.assignee as unknown as { name?: string; email?: string } | null;
+      const createdBy = task.createdBy as unknown as { name?: string; email?: string } | null;
+      const timestamps = task as TaskDocument & { createdAt?: Date; updatedAt?: Date };
+      return {
+        id: task._id.toString(),
+        title: task.title,
+        status: task.status,
+        column: task.column,
+        priority: task.priority,
+        assignee: assignee?.name || '',
+        createdBy: createdBy?.name || '',
+        dueDate: task.dueDate ? task.dueDate.toISOString() : '',
+        labels: (task.labels || []).join(', '),
+        subtasks: task.subtasks?.length || 0,
+        attachments: task.attachments?.length || 0,
+        createdAt: timestamps.createdAt ? timestamps.createdAt.toISOString() : '',
+        updatedAt: timestamps.updatedAt ? timestamps.updatedAt.toISOString() : '',
+      };
+    });
+
+    return {
+      filename: `${projectName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'tasks'}-tasks.csv`,
+      rows,
+    };
+  }
+
   async findMyTasks(userId: string): Promise<TaskDocument[]> {
-    return this.taskModel
+    const tasks = await this.taskModel
       .find({ assignee: new Types.ObjectId(userId) })
       .populate('project', 'name columns')
       .populate('assignee', 'name email avatar')
       .sort({ dueDate: 1, priority: 1 })
       .exec();
+    return tasks.filter((task) => !!task.project);
   }
 
   async findOverdue(userId: string): Promise<TaskDocument[]> {
-    return this.taskModel
+    const tasks = await this.taskModel
       .find({
         assignee: new Types.ObjectId(userId),
         dueDate: { $lt: new Date() },
@@ -156,6 +201,7 @@ export class TasksService {
       })
       .populate('project', 'name columns')
       .exec();
+    return tasks.filter((task) => !!task.project);
   }
 
   async findById(id: string, user: UserDocument): Promise<TaskDocument> {
@@ -254,7 +300,7 @@ export class TasksService {
         recipient: assigneeId,
         type: 'task_assigned',
         message: `${user.name} assigned you to "${data.title}"`,
-        link: `/projects/${data.projectId}/tasks/${task._id}`,
+        link: `/projects/${data.projectId}?task=${task._id}`,
         meta: { taskId: task._id, projectId: data.projectId },
       });
     }
@@ -367,7 +413,7 @@ export class TasksService {
         recipient: data.assigneeId,
         type: 'task_assigned',
         message: `${user.name} assigned you to "${updated.title}"`,
-        link: `/projects/${task.project}/tasks/${id}`,
+        link: `/projects/${task.project}?task=${id}`,
       });
     }
 
@@ -417,13 +463,63 @@ export class TasksService {
       throw new ForbiddenException('Cannot move this task');
     }
 
+    await this.ensureActiveProjectColumn(task.project, data.column);
+    const fromColumn = task.column;
+    const fromOrder = task.order ?? 0;
+    const toOrder = Math.max(0, data.order ?? 0);
+
+    if (fromColumn === data.column && fromOrder !== toOrder) {
+      if (fromOrder < toOrder) {
+        await this.taskModel.updateMany(
+          {
+            project: task.project,
+            column: fromColumn,
+            _id: { $ne: task._id },
+            order: { $gt: fromOrder, $lte: toOrder },
+          },
+          { $inc: { order: -1 } },
+        );
+      } else {
+        await this.taskModel.updateMany(
+          {
+            project: task.project,
+            column: fromColumn,
+            _id: { $ne: task._id },
+            order: { $gte: toOrder, $lt: fromOrder },
+          },
+          { $inc: { order: 1 } },
+        );
+      }
+    }
+
+    if (fromColumn !== data.column) {
+      await this.taskModel.updateMany(
+        {
+          project: task.project,
+          column: fromColumn,
+          _id: { $ne: task._id },
+          order: { $gt: fromOrder },
+        },
+        { $inc: { order: -1 } },
+      );
+      await this.taskModel.updateMany(
+        {
+          project: task.project,
+          column: data.column,
+          _id: { $ne: task._id },
+          order: { $gte: toOrder },
+        },
+        { $inc: { order: 1 } },
+      );
+    }
+
     const updated = await this.taskModel
       .findByIdAndUpdate(
         id,
         {
           column: data.column,
           status: data.status,
-          order: data.order,
+          order: toOrder,
           $push: {
             activityLog: {
               action: 'moved',
@@ -536,7 +632,7 @@ export class TasksService {
         recipient: userId,
         type: 'task_watched',
         message: `You are now watching "${task.title}"`,
-        link: `/projects/${task.project}/tasks/${taskId}`,
+        link: `/projects/${task.project}?task=${taskId}`,
         meta: { taskId, projectId: task.project },
       });
     }
@@ -573,12 +669,22 @@ export class TasksService {
               uploadedBy: user._id,
               uploadedAt: new Date(),
             },
+            activityLog: {
+              action: 'attachment_added',
+              performedBy: user._id,
+              performedAt: new Date(),
+              meta: { attachmentName: attachment.name },
+            },
           },
         },
         { new: true },
       )
+      .populate('assignee', 'name email avatar')
+      .populate('createdBy', 'name email avatar')
+      .populate('activityLog.performedBy', 'name email avatar')
       .exec();
     if (!task) throw new NotFoundException('Task not found');
+    this.appGateway.emitToProject(task.project.toString(), 'task-updated', task);
     await this.notifyTaskParticipants(
       task,
       user,

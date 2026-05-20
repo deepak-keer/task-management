@@ -10,6 +10,7 @@ export declare class PermissionsService {
     seedDefaults(): Promise<void>;
     getAll(): Promise<Record<string, RolePermissionsDocument>>;
     getForRole(role: string): Promise<RolePermissionsDocument>;
+    private ensureFeatureDefaults;
     update(role: string, features: Partial<RolePermissions['features']>, updatedBy: UserDocument): Promise<RolePermissionsDocument>;
     getAuditLog(): Promise<unknown[]>;
     invalidateCache(role: string): void;

@@ -12,9 +12,14 @@ export class RolePermissions {
     type: {
       invite_members: { type: Boolean, default: true },
       remove_members: { type: Boolean, default: false },
+      view_workspaces: { type: Boolean, default: false },
+      manage_workspaces: { type: Boolean, default: false },
+      view_boards: { type: Boolean, default: true },
       create_projects: { type: Boolean, default: true },
       delete_projects: { type: Boolean, default: false },
       archive_projects: { type: Boolean, default: false },
+      manage_board_members: { type: Boolean, default: false },
+      manage_announcements: { type: Boolean, default: false },
       assign_roles: { type: Boolean, default: false },
       view_analytics: { type: Boolean, default: true },
       manage_columns: { type: Boolean, default: true },
@@ -34,9 +39,14 @@ export class RolePermissions {
   features: {
     invite_members: boolean;
     remove_members: boolean;
+    view_workspaces: boolean;
+    manage_workspaces: boolean;
+    view_boards: boolean;
     create_projects: boolean;
     delete_projects: boolean;
     archive_projects: boolean;
+    manage_board_members: boolean;
+    manage_announcements: boolean;
     assign_roles: boolean;
     view_analytics: boolean;
     manage_columns: boolean;

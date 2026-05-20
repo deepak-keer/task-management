@@ -7,25 +7,50 @@ import { Shield, History } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatRelative } from '../../../../lib/utils';
 
-const FEATURES = [
-  { key: 'invite_members', label: 'Invite Members', desc: 'Can send invite links' },
-  { key: 'remove_members', label: 'Remove Members', desc: 'Can remove members from workspace' },
-  { key: 'create_projects', label: 'Create Projects', desc: 'Can create new projects' },
-  { key: 'delete_projects', label: 'Delete Projects', desc: 'Can delete projects permanently' },
-  { key: 'archive_projects', label: 'Archive Projects', desc: 'Can archive projects' },
-  { key: 'assign_roles', label: 'Assign Roles', desc: 'Can change user roles' },
-  { key: 'view_analytics', label: 'View Analytics', desc: 'Access to analytics dashboard' },
-  { key: 'manage_columns', label: 'Manage Columns', desc: 'Can add/edit/delete board columns' },
-  { key: 'create_tasks', label: 'Create Tasks', desc: 'Can create new tasks' },
-  { key: 'delete_own_tasks', label: 'Delete Own Tasks', desc: 'Can delete tasks they created' },
-  { key: 'delete_any_task', label: 'Delete Any Task', desc: 'Can delete any task' },
-  { key: 'move_tasks', label: 'Move Tasks', desc: 'Can drag tasks between columns' },
-  { key: 'assign_tasks', label: 'Assign Tasks', desc: 'Can assign tasks to members' },
-  { key: 'comment_on_tasks', label: 'Comment on Tasks', desc: 'Can leave comments' },
-  { key: 'view_all_projects', label: 'View All Projects', desc: 'Can see all workspace projects' },
-  { key: 'export_tasks', label: 'Export Tasks', desc: 'Can export task data' },
-  { key: 'watch_tasks', label: 'Watch Tasks', desc: 'Can subscribe to task updates' },
-  { key: 'upload_attachments', label: 'Upload Attachments', desc: 'Can attach files to tasks' },
+const FEATURE_GROUPS = [
+  {
+    title: 'Workspace',
+    features: [
+      { key: 'view_workspaces', label: 'View Workspaces', desc: 'Can access workspace overview screens' },
+      { key: 'manage_workspaces', label: 'Manage Workspaces', desc: 'Can moderate, archive, restore, or delete workspaces' },
+      { key: 'invite_members', label: 'Invite Members', desc: 'Can send invite links' },
+      { key: 'remove_members', label: 'Remove Members', desc: 'Can remove members from workspace' },
+      { key: 'assign_roles', label: 'Assign Roles', desc: 'Can change user roles' },
+      { key: 'manage_announcements', label: 'Manage Announcements', desc: 'Can send announcements to roles or selected people' },
+    ],
+  },
+  {
+    title: 'Boards & Columns',
+    features: [
+      { key: 'view_boards', label: 'View Boards', desc: 'Can open board pages' },
+      { key: 'view_all_projects', label: 'View All Boards', desc: 'Can see every board instead of assigned/member boards only' },
+      { key: 'create_projects', label: 'Create Boards', desc: 'Can create new boards' },
+      { key: 'archive_projects', label: 'Archive Boards', desc: 'Can archive boards' },
+      { key: 'delete_projects', label: 'Delete Boards', desc: 'Can delete boards permanently' },
+      { key: 'manage_board_members', label: 'Manage Board Members', desc: 'Can add or remove board members' },
+      { key: 'manage_columns', label: 'Manage Columns', desc: 'Can add, edit, archive, restore, delete, and reorder columns' },
+    ],
+  },
+  {
+    title: 'Tasks',
+    features: [
+      { key: 'create_tasks', label: 'Create Tasks', desc: 'Can create and edit task details' },
+      { key: 'move_tasks', label: 'Move Tasks', desc: 'Can drag tasks between columns' },
+      { key: 'assign_tasks', label: 'Assign Tasks', desc: 'Can assign tasks to members' },
+      { key: 'delete_own_tasks', label: 'Delete Own Tasks', desc: 'Can delete tasks they created' },
+      { key: 'delete_any_task', label: 'Delete Any Task', desc: 'Can delete any task' },
+      { key: 'comment_on_tasks', label: 'Comment on Tasks', desc: 'Can leave comments' },
+      { key: 'watch_tasks', label: 'Watch Tasks', desc: 'Can subscribe to task updates' },
+      { key: 'upload_attachments', label: 'Upload Attachments', desc: 'Can attach files to tasks' },
+      { key: 'export_tasks', label: 'Export Tasks', desc: 'Can export task data' },
+    ],
+  },
+  {
+    title: 'Analytics',
+    features: [
+      { key: 'view_analytics', label: 'View Analytics', desc: 'Access to analytics dashboard and productivity charts' },
+    ],
+  },
 ];
 
 type AuditLogEntry = {
@@ -91,14 +116,14 @@ export default function PermissionsPage() {
       <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
         {[{ key: 'permissions', label: 'Role Permissions', icon: Shield }, { key: 'audit', label: 'Audit Log', icon: History }].map(({ key, label, icon: Icon }) => (
           <button key={key} onClick={() => setActiveTab(key as typeof activeTab)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === key ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all duration-200 ${activeTab === key ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
             <Icon className="w-4 h-4" />{label}
           </button>
         ))}
       </div>
 
       {activeTab === 'permissions' && (
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div key="permissions-tab" className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden tab-panel-transition">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -122,26 +147,33 @@ export default function PermissionsPage() {
                     </tr>
                   ))
                 ) : (
-                  FEATURES.map(({ key, label, desc }) => (
-                    <tr key={key} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                      <td className="px-5 py-3">
-                        <p className="font-medium text-slate-900 dark:text-white">{label}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">{desc}</p>
+                  FEATURE_GROUPS.flatMap((group) => [
+                    <tr key={`group-${group.title}`} className="bg-slate-50 dark:bg-slate-700/40">
+                      <td colSpan={3} className="px-5 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
+                        {group.title}
                       </td>
-                      {['admin', 'member'].map((role) => (
-                        <td key={role} className="px-5 py-3 text-center">
-                          <button
-                            onClick={() => handleToggle(role, key)}
-                            disabled={saving}
-                            className={`relative w-10 rounded-full transition-colors ${localPerms[role]?.[key] ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-600'}`}
-                            style={{ height: '22px' }}
-                          >
-                            <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${localPerms[role]?.[key] ? 'translate-x-[18px]' : ''}`} />
-                          </button>
+                    </tr>,
+                    ...group.features.map(({ key, label, desc }) => (
+                      <tr key={key} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                        <td className="px-5 py-3">
+                          <p className="font-medium text-slate-900 dark:text-white">{label}</p>
+                          <p className="text-xs text-slate-400 mt-0.5">{desc}</p>
                         </td>
-                      ))}
-                    </tr>
-                  ))
+                        {['admin', 'member'].map((role) => (
+                          <td key={role} className="px-5 py-3 text-center">
+                            <button
+                              onClick={() => handleToggle(role, key)}
+                              disabled={saving}
+                              className={`relative w-10 rounded-full transition-colors ${localPerms[role]?.[key] ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-600'}`}
+                              style={{ height: '22px' }}
+                            >
+                              <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${localPerms[role]?.[key] ? 'translate-x-[18px]' : ''}`} />
+                            </button>
+                          </td>
+                        ))}
+                      </tr>
+                    )),
+                  ])
                 )}
               </tbody>
             </table>
@@ -150,7 +182,7 @@ export default function PermissionsPage() {
       )}
 
       {activeTab === 'audit' && (
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div key="audit-tab" className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden tab-panel-transition">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

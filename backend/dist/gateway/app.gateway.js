@@ -20,7 +20,7 @@ const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
 const user_schema_1 = require("../users/user.schema");
-const allowedOrigins = (process.env.FRONTEND_URL || 'https://task-management-karmyug.vercel.app,https://task-management-karmyug.vercel.app')
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000,http://localhost:3000')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
@@ -40,7 +40,7 @@ let AppGateway = class AppGateway {
                 return;
             }
             const payload = this.jwtService.verify(token);
-            const user = await this.userModel.findById(payload.userId).select('status').exec();
+            const user = await this.userModel.findById(payload.userId).select('status role').exec();
             if (!user || user.status !== 'active') {
                 if (user?.status === 'banned') {
                     client.emit('user-banned', { userId: payload.userId });
@@ -51,8 +51,9 @@ let AppGateway = class AppGateway {
                 return;
             }
             client.userId = payload.userId;
-            client.userRole = payload.role;
+            client.userRole = user.role;
             client.join(`user:${payload.userId}`);
+            client.join(`role:${user.role}`);
             if (!this.userSocketMap.has(payload.userId)) {
                 this.userSocketMap.set(payload.userId, new Set());
             }
@@ -105,6 +106,9 @@ let AppGateway = class AppGateway {
     }
     emitToUser(userId, event, data) {
         this.server.to(`user:${userId}`).emit(event, data);
+    }
+    emitToRole(role, event, data) {
+        this.server.to(`role:${role}`).emit(event, data);
     }
     forceLogoutUser(userId, event, data) {
         const room = `user:${userId}`;

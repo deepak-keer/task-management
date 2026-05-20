@@ -41,6 +41,18 @@ export class TasksController {
     return this.tasksService.findOverdue(req.user._id.toString());
   }
 
+  @Get('export')
+  exportTasks(
+    @Query('projectId') projectId: string | undefined,
+    @Query('status') status: string | undefined,
+    @Query('assignee') assignee: string | undefined,
+    @Query('priority') priority: string | undefined,
+    @Query('search') search: string | undefined,
+    @Request() req: { user: UserDocument },
+  ) {
+    return this.tasksService.exportTasks({ projectId, status, assignee, priority, search }, req.user);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req: { user: UserDocument }) {
     return this.tasksService.findById(id, req.user);

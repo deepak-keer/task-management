@@ -27,7 +27,7 @@ export interface TaskCard {
     performedAt: string | Date;
     meta: Record<string, unknown>;
   }>;
-  project: string | { _id: string; name: string; columns?: BoardColumn[] };
+  project: string | { _id: string; name: string; columns?: BoardColumn[] } | null;
   createdAt: string;
   updatedAt: string;
   _commentCount?: number;
@@ -163,6 +163,9 @@ const boardSlice = createSlice({
           if (!state.taskOrder[task.column]) state.taskOrder[task.column] = [];
           state.taskOrder[task.column].push(task._id);
         }
+        state.taskOrder[task.column] = (state.taskOrder[task.column] || []).sort(
+          (a, b) => (state.tasks[a]?.order ?? 0) - (state.tasks[b]?.order ?? 0),
+        );
       }
     },
 

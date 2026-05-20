@@ -26,7 +26,11 @@ export declare class SuperAdminController {
         };
         tasks: {
             total: number;
-            byStatus: any[];
+            byStatus: {
+                _id: any;
+                name: string;
+                count: any;
+            }[];
             byPriority: any[];
         };
     }>;
@@ -41,5 +45,6 @@ export declare class SuperAdminController {
     unbanUser(id: string): Promise<UserDocument>;
     deleteUser(id: string): Promise<void>;
     archiveProject(id: string): Promise<import("../projects/project.schema").ProjectDocument>;
+    restoreProject(id: string): Promise<import("../projects/project.schema").ProjectDocument>;
     deleteProject(id: string): Promise<void>;
 }

@@ -14,6 +14,7 @@ const projects_service_1 = require("./projects.service");
 const project_schema_1 = require("./project.schema");
 const task_schema_1 = require("../tasks/task.schema");
 const gateway_module_1 = require("../gateway/gateway.module");
+const permissions_module_1 = require("../permissions/permissions.module");
 let ProjectsModule = class ProjectsModule {
 };
 exports.ProjectsModule = ProjectsModule;
@@ -25,6 +26,7 @@ exports.ProjectsModule = ProjectsModule = __decorate([
                 { name: task_schema_1.Task.name, schema: task_schema_1.TaskSchema },
             ]),
             gateway_module_1.GatewayModule,
+            permissions_module_1.PermissionsModule,
         ],
         controllers: [projects_controller_1.ProjectsController],
         providers: [projects_service_1.ProjectsService],

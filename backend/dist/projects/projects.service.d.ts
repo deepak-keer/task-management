@@ -3,11 +3,14 @@ import { ProjectDocument } from './project.schema';
 import { TaskDocument } from '../tasks/task.schema';
 import { UserDocument } from '../users/user.schema';
 import { AppGateway } from '../gateway/app.gateway';
+import { PermissionsService } from '../permissions/permissions.service';
 export declare class ProjectsService {
     private projectModel;
     private taskModel;
     private appGateway;
-    constructor(projectModel: Model<ProjectDocument>, taskModel: Model<TaskDocument>, appGateway: AppGateway);
+    private permissionsService;
+    constructor(projectModel: Model<ProjectDocument>, taskModel: Model<TaskDocument>, appGateway: AppGateway, permissionsService: PermissionsService);
+    private hasPermission;
     private canManageColumns;
     private normalizeColumns;
     private ensureColumns;

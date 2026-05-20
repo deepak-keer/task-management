@@ -46,6 +46,60 @@ export const {
   useToggleReactionMutation,
 } = commentsApi;
 
+// ── Announcements ─────────────────────────────────────────────────────────────
+
+export interface Announcement {
+  _id: string;
+  title: string;
+  body: string;
+  tone: 'info' | 'success' | 'warning' | 'alert';
+  pinned: boolean;
+  targetType: 'all' | 'role' | 'users';
+  targetRole: 'super_admin' | 'admin' | 'member' | null;
+  recipients: Array<{ _id: string; name: string; avatar?: string; role?: string; email?: string }>;
+  createdBy: { _id: string; name: string; avatar?: string; role?: string };
+  createdAt: string;
+  updatedAt: string;
+}
+
+type AnnouncementPayload = {
+  title: string;
+  body: string;
+  tone?: string;
+  pinned?: boolean;
+  targetType?: 'all' | 'role' | 'users';
+  targetRole?: 'super_admin' | 'admin' | 'member' | null;
+  recipients?: string[];
+};
+
+export const announcementsApi = baseApi.injectEndpoints({
+  endpoints: (builder) => ({
+    getAnnouncements: builder.query<Announcement[], { limit?: number; managed?: boolean } | void>({
+      query: (params) => ({ url: '/announcements', params: params || undefined }),
+      providesTags: ['Announcement'],
+    }),
+    createAnnouncement: builder.mutation<Announcement, AnnouncementPayload>({
+      query: (body) => ({ url: '/announcements', method: 'POST', body }),
+      invalidatesTags: ['Announcement'],
+    }),
+    updateAnnouncement: builder.mutation<Announcement, { id: string; data: Partial<AnnouncementPayload> }>({
+      query: ({ id, data }) => ({ url: `/announcements/${id}`, method: 'PATCH', body: data }),
+      invalidatesTags: ['Announcement'],
+    }),
+    deleteAnnouncement: builder.mutation<void, string>({
+      query: (id) => ({ url: `/announcements/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['Announcement'],
+    }),
+  }),
+});
+
+export const {
+  useGetAnnouncementsQuery,
+  useCreateAnnouncementMutation,
+  useUpdateAnnouncementMutation,
+  useDeleteAnnouncementMutation,
+} = announcementsApi;
+
 // ── Users ─────────────────────────────────────────────────────────────────────
 
 export interface AppUser {
@@ -232,6 +286,10 @@ export const superAdminApi = baseApi.injectEndpoints({
       query: (id) => ({ url: `/super-admin/workspaces/${id}/archive`, method: 'PATCH' }),
       invalidatesTags: ['Project'],
     }),
+    restoreWorkspace: builder.mutation<unknown, string>({
+      query: (id) => ({ url: `/super-admin/workspaces/${id}/restore`, method: 'PATCH' }),
+      invalidatesTags: ['Project'],
+    }),
     deleteWorkspace: builder.mutation<void, string>({
       query: (id) => ({ url: `/super-admin/workspaces/${id}`, method: 'DELETE' }),
       invalidatesTags: ['Project'],
@@ -250,5 +308,6 @@ export const {
   useUnbanUserMutation,
   useDeleteAdminUserMutation,
   useArchiveWorkspaceMutation,
+  useRestoreWorkspaceMutation,
   useDeleteWorkspaceMutation,
 } = superAdminApi;

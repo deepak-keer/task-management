@@ -10,6 +10,7 @@ import {
 import { useAppDispatch, useAppSelector } from '../../store/index';
 import { setSidebarOpen, toggleSidebar } from '../../store/slices/uiSlice';
 import { useGetProjectsQuery } from '../../services/projectsApi';
+import { usePermission } from '../../hooks/usePermission';
 import { getAvatarUrl, onlineStatusConfig } from '../../lib/utils';
 import { cn } from '../../lib/utils';
 
@@ -40,6 +41,10 @@ export default function Sidebar() {
   const sidebarOpen = useAppSelector((s) => s.ui.sidebarOpen);
   const unreadCount = useAppSelector((s) => s.notifications.unreadCount);
   const { data: projects = [] } = useGetProjectsQuery();
+  const canViewBoards = usePermission('view_boards');
+  const canViewWorkspaces = usePermission('view_workspaces');
+  const canManageColumns = usePermission('manage_columns');
+  const canViewAnalytics = usePermission('view_analytics');
 
   const isActive = (href: string) =>
     href === '/dashboard' ? pathname === href : pathname.startsWith(href);
@@ -49,30 +54,40 @@ export default function Sidebar() {
     }
   };
 
-  if (!sidebarOpen) {
-    return (
-      <div className="fixed left-0 top-0 z-30 hidden h-full w-0 lg:block">
-        <button
-          onClick={() => dispatch(toggleSidebar())}
-          className="absolute top-4 -right-8 w-7 h-7 bg-slate-800 border border-slate-700 rounded-r-lg flex items-center justify-center text-slate-400 hover:text-white"
-          title="Open sidebar"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-    );
-  }
-
   return (
     <>
+      <div
+        className={cn(
+          'fixed left-0 top-0 z-30 hidden h-full w-0 transition-opacity duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:block',
+          sidebarOpen ? 'pointer-events-none opacity-0' : 'opacity-100'
+        )}
+        aria-hidden={sidebarOpen}
+      >
+        <button
+          type="button"
+          onClick={() => dispatch(toggleSidebar())}
+          className="absolute -right-8 top-4 flex h-7 w-7 items-center justify-center rounded-r-lg border border-slate-700 bg-slate-800 text-slate-400 shadow-lg shadow-slate-950/20 transition-all duration-200 hover:w-8 hover:text-white"
+          title="Open sidebar"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+
       <button
         type="button"
         aria-label="Close navigation"
         onClick={() => dispatch(setSidebarOpen(false))}
-        className="fixed inset-0 z-30 bg-slate-950/50 backdrop-blur-[1px] lg:hidden"
+        className={cn(
+          'fixed inset-0 z-30 bg-slate-950/50 backdrop-blur-[1px] transition-opacity duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:hidden',
+          sidebarOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+        )}
       />
       <aside
-        className="fixed left-0 top-0 z-40 flex h-full w-[min(82vw,240px)] flex-col bg-slate-900 shadow-2xl shadow-slate-950/30 lg:z-30 lg:w-[240px] lg:shadow-none"
+        aria-hidden={!sidebarOpen}
+        className={cn(
+          'fixed left-0 top-0 z-40 flex h-full w-[min(82vw,240px)] flex-col bg-slate-900 shadow-2xl shadow-slate-950/30 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform lg:z-30 lg:w-[240px] lg:shadow-none',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        )}
         style={{ background: 'var(--color-sidebar-bg)', borderRight: '1px solid #1e293b' }}
       >
       {/* Logo */}
@@ -84,8 +99,9 @@ export default function Sidebar() {
           <span className="font-bold text-white text-base truncate">TaskFlow</span>
         </Link>
         <button
+          type="button"
           onClick={() => dispatch(toggleSidebar())}
-          className="text-slate-500 hover:text-slate-300 p-1 rounded"
+          className="rounded p-1 text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-300"
           title="Close sidebar"
         >
           <ChevronLeft className="hidden w-4 h-4 lg:block" />
@@ -101,7 +117,7 @@ export default function Sidebar() {
             href={href}
             onClick={closeOnMobile}
             className={cn(
-              'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors group',
+              'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
               isActive(href)
                 ? 'bg-blue-600 text-white'
                 : 'text-slate-400 hover:bg-slate-800 hover:text-white'
@@ -117,39 +133,41 @@ export default function Sidebar() {
           </Link>
         ))}
 
-        {/* Projects */}
+        {/* Boards */}
+        {canViewBoards && (
         <div className="pt-4">
           <p className="px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
-            Projects
+            Boards
           </p>
-          {projects.slice(0, 8).map((project) => (
+          {projects.filter(Boolean).slice(0, 8).map((project) => (
             <Link
               key={project._id}
               href={`/projects/${project._id}`}
               onClick={closeOnMobile}
               className={cn(
-                'flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm transition-colors',
+                'flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-all duration-200',
                 pathname.startsWith(`/projects/${project._id}`)
                   ? 'bg-blue-600/20 text-blue-300'
                   : 'text-slate-400 hover:bg-slate-800 hover:text-white'
               )}
             >
               <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
-              <span className="truncate">{project.name}</span>
+              <span className="truncate">{project.name || 'Untitled board'}</span>
             </Link>
           ))}
           {projects.length === 0 && (
-            <p className="px-3 text-xs text-slate-600 italic">No projects yet</p>
+            <p className="px-3 text-xs text-slate-600 italic">No boards yet</p>
           )}
           <Link
             href="/projects"
             onClick={closeOnMobile}
-            className="flex items-center gap-3 px-3 py-1.5 rounded-lg text-xs text-slate-600 hover:text-slate-400 transition-colors mt-1"
+            className="mt-1 flex items-center gap-3 rounded-lg px-3 py-1.5 text-xs text-slate-600 transition-colors hover:text-slate-400"
           >
             <FolderOpen className="w-3 h-3" />
-            All projects →
+            All boards →
           </Link>
         </div>
+        )}
 
         {/* Admin nav */}
         {(user?.role === 'admin' || user?.role === 'super_admin') && (
@@ -163,7 +181,7 @@ export default function Sidebar() {
                 href={href}
                 onClick={closeOnMobile}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
                   isActive(href)
                     ? 'bg-blue-600 text-white'
                     : 'text-slate-400 hover:bg-slate-800 hover:text-white'
@@ -181,13 +199,20 @@ export default function Sidebar() {
             <p className="px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
               Super Admin
             </p>
-            {superAdminItems.map(({ href, icon: Icon, label }) => (
+            {superAdminItems
+              .filter((item) => {
+                if (item.href === '/admin/workspaces') return canViewWorkspaces;
+                if (item.href === '/admin/columns') return canManageColumns;
+                if (item.href === '/admin/stats') return canViewAnalytics;
+                return true;
+              })
+              .map(({ href, icon: Icon, label }) => (
               <Link
                 key={href}
                 href={href}
                 onClick={closeOnMobile}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
                   isActive(href)
                     ? 'bg-purple-600 text-white'
                     : 'text-slate-400 hover:bg-slate-800 hover:text-white'
@@ -203,7 +228,7 @@ export default function Sidebar() {
 
       {/* User footer */}
       <div className="border-t border-slate-800 p-3">
-        <Link href="/profile" onClick={closeOnMobile} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+        <Link href="/profile" onClick={closeOnMobile} className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-slate-800">
           <div className="relative flex-shrink-0">
             <img
               src={getAvatarUrl(user?.name || 'User', user?.avatar)}

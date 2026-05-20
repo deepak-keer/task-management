@@ -5,6 +5,7 @@ import { ProjectsService } from './projects.service';
 import { Project, ProjectSchema } from './project.schema';
 import { Task, TaskSchema } from '../tasks/task.schema';
 import { GatewayModule } from '../gateway/gateway.module';
+import { PermissionsModule } from '../permissions/permissions.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { GatewayModule } from '../gateway/gateway.module';
       { name: Task.name, schema: TaskSchema },
     ]),
     GatewayModule,
+    PermissionsModule,
   ],
   controllers: [ProjectsController],
   providers: [ProjectsService],

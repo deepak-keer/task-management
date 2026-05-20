@@ -183,8 +183,10 @@ export default function TaskDetailPage() {
     : canDeleteAnyTask || task.createdBy?._id === user?._id;
   const canUpdateStatus = isMember ? isAssignedToCurrentUser : canManageTaskDetails || canMove;
   const currentDueDate = task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '';
-  const completedSubs = task.subtasks.filter((s) => s.done).length;
-  const progress = task.subtasks.length > 0 ? Math.round((completedSubs / task.subtasks.length) * 100) : 0;
+  const labels = Array.isArray(task.labels) ? task.labels : [];
+  const subtasks = Array.isArray(task.subtasks) ? task.subtasks : [];
+  const completedSubs = subtasks.filter((s) => s.done).length;
+  const progress = subtasks.length > 0 ? Math.round((completedSubs / subtasks.length) * 100) : 0;
   const selectedAssignee =
     assigneeOptions.find((m) => m._id === draft.assigneeId) ||
     users.find((m) => m._id === draft.assigneeId) ||
@@ -530,24 +532,24 @@ export default function TaskDetailPage() {
             )}
           </section>
 
-          {(task.subtasks.length > 0 || canManageTaskDetails) && (
+          {(subtasks.length > 0 || canManageTaskDetails) && (
             <section className="border-b border-slate-200 pb-8 dark:border-slate-800">
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">Checklist</h2>
                   <p className="mt-1 text-xs text-slate-500">
-                    {completedSubs} of {task.subtasks.length} complete
+                    {completedSubs} of {subtasks.length} complete
                   </p>
                 </div>
                 <span className="text-xs font-medium text-slate-500">{progress}%</span>
               </div>
-              {task.subtasks.length > 0 && (
+              {subtasks.length > 0 && (
                 <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                   <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${progress}%` }} />
                 </div>
               )}
               <div className="space-y-1">
-                {task.subtasks.map((sub) => (
+                {subtasks.map((sub) => (
                   <button
                     key={sub.id}
                     type="button"
@@ -681,9 +683,9 @@ export default function TaskDetailPage() {
               </div>
               <div>
                 <p className="mb-2 text-xs font-medium text-slate-500">Labels</p>
-                {task.labels.length > 0 ? (
+                {labels.length > 0 ? (
                   <div className="flex flex-wrap gap-1.5">
-                    {task.labels.map((label) => (
+                    {labels.map((label) => (
                       <span
                         key={label}
                         className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"

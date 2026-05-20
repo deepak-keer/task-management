@@ -29,6 +29,16 @@ export declare class TasksService {
         priority?: string;
         search?: string;
     }, user?: UserDocument): Promise<TaskDocument[]>;
+    exportTasks(query: {
+        projectId?: string;
+        status?: string;
+        assignee?: string;
+        priority?: string;
+        search?: string;
+    }, user: UserDocument): Promise<{
+        filename: string;
+        rows: Array<Record<string, string | number>>;
+    }>;
     findMyTasks(userId: string): Promise<TaskDocument[]>;
     findOverdue(userId: string): Promise<TaskDocument[]>;
     findById(id: string, user: UserDocument): Promise<TaskDocument>;

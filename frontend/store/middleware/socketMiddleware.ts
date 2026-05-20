@@ -176,6 +176,10 @@ export const socketMiddleware: Middleware = (store) => (next) => (action) => {
       store.dispatch(baseApi.util.invalidateTags(taskListTags));
     });
 
+    socket.on('comment-added', ({ taskId }) => {
+      store.dispatch(baseApi.util.invalidateTags(['Comment', { type: 'Task', id: taskId }]));
+    });
+
     socket.on('project-updated', (project) => {
       store.dispatch(baseApi.util.invalidateTags([{ type: 'Project', id: project._id }, 'Project']));
     });
@@ -184,6 +188,21 @@ export const socketMiddleware: Middleware = (store) => (next) => (action) => {
       store.dispatch(addNotification(notification));
       store.dispatch(baseApi.util.invalidateTags(['Notification']));
       showNotificationToast(notification);
+    });
+
+    socket.on('announcement-created', (announcement) => {
+      store.dispatch(baseApi.util.invalidateTags(['Announcement']));
+      if (announcement?.title) {
+        toast.success(`Announcement: ${announcement.title}`);
+      }
+    });
+
+    socket.on('announcement-updated', () => {
+      store.dispatch(baseApi.util.invalidateTags(['Announcement']));
+    });
+
+    socket.on('announcement-deleted', () => {
+      store.dispatch(baseApi.util.invalidateTags(['Announcement']));
     });
 
     socket.on('user-joined-board', ({ userId }) => {

@@ -13,6 +13,7 @@ import { PermissionsModule } from './permissions/permissions.module';
 import { GatewayModule } from './gateway/gateway.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { SuperAdminModule } from './super-admin/super-admin.module';
+import { AnnouncementsModule } from './announcements/announcements.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { SuperAdminModule } from './super-admin/super-admin.module';
     GatewayModule,
     SchedulerModule,
     SuperAdminModule,
+    AnnouncementsModule,
   ],
 })
 export class AppModule {}

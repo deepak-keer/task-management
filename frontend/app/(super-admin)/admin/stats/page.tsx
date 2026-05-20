@@ -4,12 +4,46 @@ import { useGetAdminStatsQuery } from '../../../../services/allApis';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Users, FolderOpen, CheckSquare, BarChart3 } from 'lucide-react';
 import { Skeleton } from '../../../../components/ui/index';
+import { usePermission } from '../../../../hooks/usePermission';
 
 const PRIORITY_COLORS = { urgent: '#ef4444', high: '#f97316', medium: '#eab308', low: '#3b82f6' };
 const STATUS_COLORS = ['#3b82f6', '#f59e0b', '#8b5cf6', '#22c55e', '#64748b'];
+const STATUS_LABELS: Record<string, string> = {
+  todo: 'To Do',
+  in_progress: 'In Progress',
+  in_review: 'In Review',
+  review: 'Review',
+  done: 'Done',
+};
+
+const isRawId = (value: string) =>
+  /^[a-f0-9]{24}$/i.test(value) ||
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value) ||
+  /^[0-9a-f-]{20,}$/i.test(value);
+
+const formatStatusName = (value?: string, fallback?: string) => {
+  const label = fallback || value;
+  if (!label) return 'Unknown';
+  if (STATUS_LABELS[label]) return STATUS_LABELS[label];
+  if (isRawId(label)) return 'Custom Column';
+  return label
+    .replace(/[_-]/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
 
 export default function AdminStatsPage() {
   const { data: stats, isLoading } = useGetAdminStatsQuery();
+  const canViewAnalytics = usePermission('view_analytics');
+
+  if (!canViewAnalytics) {
+    return (
+      <div className="mx-auto max-w-3xl rounded-xl border border-slate-200 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-800">
+        <BarChart3 className="mx-auto mb-3 h-8 w-8 text-slate-400" />
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-white">Analytics access disabled</h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Your role does not have permission to view analytics.</p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -31,7 +65,7 @@ export default function AdminStatsPage() {
   const s = stats as {
     users: { total: number; byRole: Array<{ _id: string; count: number }>; newThisWeek: number; activeToday: number };
     projects: { total: number; active: number; archived: number };
-    tasks: { total: number; byStatus: Array<{ _id: string; count: number }>; byPriority: Array<{ _id: string; count: number }> };
+    tasks: { total: number; byStatus: Array<{ _id: string; name?: string; count: number }>; byPriority: Array<{ _id: string; count: number }> };
   };
 
   const statCards = [
@@ -42,7 +76,7 @@ export default function AdminStatsPage() {
   ];
 
   const tasksByStatus = s.tasks.byStatus.map((item) => ({
-    name: item._id?.replace('_', ' ') || 'Unknown',
+    name: formatStatusName(item._id, item.name),
     value: item.count,
   }));
 
