@@ -64,6 +64,21 @@ type AuditLogEntry = {
 
 const formatFeatureName = (feature?: string) => feature?.replace(/_/g, ' ') || 'Unknown feature';
 
+type PermissionFeatures = Record<string, boolean>;
+type PermissionEntry = PermissionFeatures | { features?: PermissionFeatures };
+
+const getPermissionFeatures = (entry: PermissionEntry): PermissionFeatures => {
+  if (
+    'features' in entry &&
+    entry.features &&
+    typeof entry.features === 'object'
+  ) {
+    return entry.features;
+  }
+
+  return entry as PermissionFeatures;
+};
+
 export default function PermissionsPage() {
   const { data: permissions, isLoading } = useGetPermissionsQuery();
   const { data: auditLog = [] } = useGetAuditLogQuery();
@@ -77,7 +92,7 @@ export default function PermissionsPage() {
     if (permissions) {
       const p: Record<string, Record<string, boolean>> = {};
       for (const [role, data] of Object.entries(permissions)) {
-        p[role] = { ...(data as { features?: Record<string, boolean> }).features };
+        p[role] = { ...getPermissionFeatures(data) };
       }
       setLocalPerms(p);
     }

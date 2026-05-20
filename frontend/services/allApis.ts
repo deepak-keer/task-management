@@ -190,15 +190,32 @@ export const { useGetInvitesQuery, useCreateInviteMutation, useRevokeInviteMutat
 
 // ── Permissions ───────────────────────────────────────────────────────────────
 
+type PermissionFeatures = Record<string, boolean>;
+type PermissionResponse = Record<string, PermissionFeatures | { features?: PermissionFeatures }>;
+
 export const permissionsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getPermissions: builder.query<Record<string, Record<string, boolean>>, void>({
+    getPermissions: builder.query<PermissionResponse, void>({
       query: () => '/permissions',
       providesTags: ['Permission'],
     }),
-    updatePermissions: builder.mutation<unknown, { role: string; features: Record<string, boolean> }>({
+    updatePermissions: builder.mutation<{ features?: PermissionFeatures }, { role: string; features: PermissionFeatures }>({
       query: ({ role, features }) => ({ url: `/permissions/${role}`, method: 'PATCH', body: features }),
       invalidatesTags: ['Permission'],
+      async onQueryStarted({ role }, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          if (!data.features) return;
+
+          dispatch(
+            permissionsApi.util.updateQueryData('getPermissions', undefined, (draft) => {
+              draft[role] = { ...(draft[role] || {}), features: data.features };
+            }),
+          );
+        } catch {
+          // The page-level handler shows the save error and reverts local state.
+        }
+      },
     }),
     getAuditLog: builder.query<unknown[], void>({
       query: () => '/permissions/audit-log',
