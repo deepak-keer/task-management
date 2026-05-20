@@ -20,9 +20,14 @@ import { AnnouncementsModule } from './announcements/announcements.module';
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI'),
-      }),
+      useFactory: (configService: ConfigService) => {
+        const uri = configService.get<string>('MONGODB_URI');
+        if (!uri) {
+          throw new Error('MONGODB_URI is required');
+        }
+
+        return { uri };
+      },
       inject: [ConfigService],
     }),
     ScheduleModule.forRoot(),

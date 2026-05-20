@@ -29,9 +29,12 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
-  const port = process.env.PORT || 3001;
-  await app.listen(port);
-  console.log(`🚀 Task Manager Backend running on port ${port}`);
+  const port = Number(process.env.PORT) || 3001;
+  await app.listen(port, '0.0.0.0');
+  console.log(`Task Manager Backend running on port ${port}`);
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+  console.error('Backend failed to start:', error);
+  process.exit(1);
+});
