@@ -29,6 +29,7 @@ export class RolePermissions {
       move_tasks: { type: Boolean, default: true },
       assign_tasks: { type: Boolean, default: true },
       comment_on_tasks: { type: Boolean, default: true },
+      view_user_task_overview: { type: Boolean, default: false },
       view_all_projects: { type: Boolean, default: false },
       export_tasks: { type: Boolean, default: false },
       watch_tasks: { type: Boolean, default: true },
@@ -56,6 +57,7 @@ export class RolePermissions {
     move_tasks: boolean;
     assign_tasks: boolean;
     comment_on_tasks: boolean;
+    view_user_task_overview: boolean;
     view_all_projects: boolean;
     export_tasks: boolean;
     watch_tasks: boolean;

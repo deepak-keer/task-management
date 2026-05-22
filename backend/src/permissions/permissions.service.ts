@@ -25,6 +25,7 @@ const FEATURE_DEFAULTS: RolePermissions['features'] = {
   move_tasks: true,
   assign_tasks: true,
   comment_on_tasks: true,
+  view_user_task_overview: false,
   view_all_projects: false,
   export_tasks: false,
   watch_tasks: true,

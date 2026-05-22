@@ -1,4 +1,5 @@
 import { baseApi } from './baseApi';
+import type { TaskCard } from '../store/slices/boardSlice';
 
 // ── Comments ──────────────────────────────────────────────────────────────────
 
@@ -114,6 +115,26 @@ export interface AppUser {
   notificationPrefs: Record<string, boolean>;
   createdAt: string;
   invitedBy?: { _id: string; name: string; email: string };
+}
+
+export interface UserTaskOverviewUser extends Pick<AppUser, '_id' | 'name' | 'email' | 'avatar' | 'role' | 'status'> {
+  taskCount: number;
+  completedCount: number;
+  overdueCount: number;
+  progress: number;
+}
+
+export interface UserTaskOverview {
+  selectedUserId: string | null;
+  users: UserTaskOverviewUser[];
+  columns: Array<{ id: string; name: string; color: string; order: number; count: number }>;
+  tasks: TaskCard[];
+  summary: {
+    totalTasks: number;
+    completedTasks: number;
+    overdueTasks: number;
+    progress: number;
+  };
 }
 
 export type EmailNotificationType =
@@ -308,6 +329,10 @@ export const superAdminApi = baseApi.injectEndpoints({
       query: () => '/super-admin/workspaces',
       providesTags: ['Project'],
     }),
+    getUserTaskOverview: builder.query<UserTaskOverview, { userId?: string } | void>({
+      query: (params) => ({ url: '/super-admin/user-tasks', params: params || undefined }),
+      providesTags: ['Task', 'User'],
+    }),
     approveUser: builder.mutation<AppUser, string>({
       query: (id) => ({ url: `/super-admin/users/${id}/approve`, method: 'PATCH' }),
       invalidatesTags: ['User'],
@@ -348,6 +373,7 @@ export const {
   useGetPendingApprovalsQuery,
   useGetAdminStatsQuery,
   useGetAllWorkspacesQuery,
+  useGetUserTaskOverviewQuery,
   useApproveUserMutation,
   useRejectUserMutation,
   useBanUserMutation,

@@ -59,7 +59,7 @@ export class EmailProcessorService implements OnApplicationBootstrap {
 
       for (const email of pendingEmails) {
         try {
-          const result = await this.emailService.sendEmailViaNodemailer(
+          const result = await this.emailService.sendEmail(
             email.recipientEmail,
             email.subject,
             email.htmlBody,

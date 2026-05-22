@@ -47,6 +47,11 @@ export class SuperAdminController {
     return this.superAdminService.getAllProjects();
   }
 
+  @Get('user-tasks')
+  getUserTaskOverview(@Query('userId') userId?: string) {
+    return this.superAdminService.getUserTaskOverview(userId);
+  }
+
   @Patch('users/:id/approve')
   approveUser(@Param('id') id: string, @Request() req: { user: UserDocument }) {
     return this.superAdminService.approveUser(id, req.user._id.toString());

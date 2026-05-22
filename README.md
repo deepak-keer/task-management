@@ -59,6 +59,9 @@ JWT_SECRET=change-this-to-a-long-random-string
 JWT_EXPIRES_IN=7d
 PORT=3001
 FRONTEND_URL=https://task-management-karmyug.vercel.app
+APP_URL=http://localhost:3000
+RESEND_API_KEY=re_xxxxxxxxx
+EMAIL_FROM=TaskFlow <onboarding@resend.dev>
 ```
 
 **Frontend** — copy `.env.example` to `.env.local`:
@@ -90,10 +93,10 @@ This creates:
 cd backend && npm run start:dev
 
 # Terminal 2 — Frontend
-cd frontend && npm run dev
+cd frohttps://task-management-karmyug.vercel.apphttps://task-management-karmyug.vercel.app
 ```
 
-Open [https://task-management-karmyug.vercel.app](https://task-management-karmyug.vercel.app)
+Open [http://localhost:3000](http://localhost:3000)
 
 ---
 

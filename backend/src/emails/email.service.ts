@@ -1,6 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
+
+type ResendErrorResponse = {
+  message?: string;
+  name?: string;
+  statusCode?: number;
+};
 
 @Injectable()
 export class EmailService {
@@ -8,38 +13,57 @@ export class EmailService {
 
   constructor(private configService: ConfigService) {}
 
-  async sendEmailViaNodemailer(
+  async sendEmail(
     to: string,
     subject: string,
     htmlBody: string,
   ): Promise<{ success: boolean; errorMessage?: string }> {
-    const host = this.configService.get<string>('SMTP_HOST');
-    const port = Number(this.configService.get<string>('SMTP_PORT') || 587);
-    const user = this.configService.get<string>('SMTP_USER');
-    const pass = this.configService.get<string>('SMTP_PASSWORD');
-    const from = this.configService.get<string>('EMAIL_FROM') || user;
+    const apiKey = this.configService.get<string>('RESEND_API_KEY');
+    const from = this.configService.get<string>('EMAIL_FROM');
 
-    if (!host || !user || !pass || !from) {
+    if (!apiKey || !from) {
       return {
         success: false,
-        errorMessage: 'SMTP_HOST, SMTP_USER, SMTP_PASSWORD, and EMAIL_FROM are required',
+        errorMessage: 'RESEND_API_KEY and EMAIL_FROM are required',
       };
     }
 
-    const transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: { user, pass },
-    });
-
     try {
-      await transporter.sendMail({ from, to, subject, html: htmlBody });
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from,
+          to: [to],
+          subject,
+          html: htmlBody,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await this.parseResendError(response);
+        throw new Error(error);
+      }
+
       return { success: true };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       this.logger.error(`Email send failed for ${to}: ${errorMessage}`);
       return { success: false, errorMessage };
+    }
+  }
+
+  private async parseResendError(response: Response): Promise<string> {
+    const fallback = `Resend API failed with status ${response.status}`;
+
+    try {
+      const body = (await response.json()) as ResendErrorResponse;
+      return body.message || body.name || fallback;
+    } catch {
+      return fallback;
     }
   }
 }

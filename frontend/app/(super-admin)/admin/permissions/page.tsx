@@ -37,6 +37,7 @@ const FEATURE_GROUPS = [
       { key: 'create_tasks', label: 'Create Tasks', desc: 'Can create and edit task details' },
       { key: 'move_tasks', label: 'Move Tasks', desc: 'Can drag tasks between columns' },
       { key: 'assign_tasks', label: 'Assign Tasks', desc: 'Can assign tasks to members' },
+      { key: 'view_user_task_overview', label: 'View User Task Overview', desc: 'Can review tasks by user and overall task progress' },
       { key: 'delete_own_tasks', label: 'Delete Own Tasks', desc: 'Can delete tasks they created' },
       { key: 'delete_any_task', label: 'Delete Any Task', desc: 'Can delete any task' },
       { key: 'comment_on_tasks', label: 'Comment on Tasks', desc: 'Can leave comments' },
