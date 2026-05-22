@@ -58,8 +58,8 @@ MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/taskmanager
 JWT_SECRET=change-this-to-a-long-random-string
 JWT_EXPIRES_IN=7d
 PORT=3001
-FRONTEND_URL=http://localhost:3000
-APP_URL=http://localhost:3000
+FRONTEND_URL=https://task-management-karmyug.vercel.app
+APP_URL=https://task-management-karmyug.vercel.app
 RESEND_API_KEY=re_xxxxxxxxx
 EMAIL_FROM=TaskFlow <onboarding@resend.dev>
 ```
@@ -102,7 +102,7 @@ cd backend && npm run start:dev
 cd frohttps://task-management-karmyug.vercel.apphttps://task-management-karmyug.vercel.app
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open [https://task-management-karmyug.vercel.app](https://task-management-karmyug.vercel.app)
 
 ---
 
