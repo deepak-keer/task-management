@@ -58,7 +58,7 @@ MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/taskmanager
 JWT_SECRET=change-this-to-a-long-random-string
 JWT_EXPIRES_IN=7d
 PORT=3001
-FRONTEND_URL=https://task-management-karmyug.vercel.app
+FRONTEND_URL=http://localhost:3000
 APP_URL=http://localhost:3000
 RESEND_API_KEY=re_xxxxxxxxx
 EMAIL_FROM=TaskFlow <onboarding@resend.dev>
@@ -71,6 +71,12 @@ cd frontend && cp .env.example .env.local
 ```
 NEXT_PUBLIC_API_URL=https://task-management-k9q8.onrender.com/api
 NEXT_PUBLIC_SOCKET_URL=https://task-management-k9q8.onrender.com
+```
+
+For production, set backend `FRONTEND_URL` and `APP_URL` to your deployed frontend URL, for example:
+```
+FRONTEND_URL=https://task-management-karmyug.vercel.app
+APP_URL=https://task-management-karmyug.vercel.app
 ```
 
 ### 3. Seed the Super Admin

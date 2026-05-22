@@ -56,7 +56,7 @@ export class EmailQueueService {
       return;
     }
 
-    const appUrl = this.configService.get<string>('APP_URL') || this.configService.get<string>('FRONTEND_URL') || '';
+    const appUrl = this.getAppUrl();
     const actionUrl = this.absoluteUrl(appUrl, data.link || '/notifications');
     const subject = `TaskFlow: ${EMAIL_NOTIFICATION_LABELS[notificationType]}`;
     const htmlBody = this.templates.render(notificationType, {
@@ -120,6 +120,26 @@ export class EmailQueueService {
   private getMetaString(meta: Record<string, unknown> | undefined, key: string): string {
     const value = meta?.[key];
     return typeof value === 'string' ? value : '';
+  }
+
+  private getAppUrl(): string {
+    const appUrl = this.configService.get<string>('APP_URL')?.trim();
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL')?.split(',')[0]?.trim();
+    const urls = [appUrl, frontendUrl].filter((url): url is string => !!url);
+
+    if (process.env.NODE_ENV === 'production') {
+      const productionUrl = urls.find((url) => !this.isLocalhostUrl(url));
+      if (!productionUrl && urls.length > 0) {
+        this.logger.warn('APP_URL/FRONTEND_URL points to localhost in production; email links will be relative');
+      }
+      return productionUrl || '';
+    }
+
+    return urls[0] || '';
+  }
+
+  private isLocalhostUrl(url: string): boolean {
+    return /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?/i.test(url);
   }
 
   private absoluteUrl(baseUrl: string, path: string): string {
