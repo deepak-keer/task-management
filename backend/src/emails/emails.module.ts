@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { Project, ProjectSchema } from '../projects/project.schema';
 import { User, UserSchema } from '../users/user.schema';
 import { EmailRateLimit, EmailRateLimitSchema } from './email-rate-limit.schema';
 import { EmailProcessorService } from './email-processor.service';
@@ -18,6 +19,7 @@ import { PendingEmail, PendingEmailSchema } from './pending-email.schema';
       { name: NotificationPreference.name, schema: NotificationPreferenceSchema },
       { name: EmailRateLimit.name, schema: EmailRateLimitSchema },
       { name: User.name, schema: UserSchema },
+      { name: Project.name, schema: ProjectSchema },
     ]),
   ],
   providers: [EmailService, EmailTemplateService, EmailQueueService, EmailProcessorService],

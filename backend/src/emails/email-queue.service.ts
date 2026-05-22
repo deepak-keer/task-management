@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
 import { Model, Types } from 'mongoose';
 import { User, UserDocument } from '../users/user.schema';
+import { Project, ProjectDocument } from '../projects/project.schema';
 import { EmailRateLimit, EmailRateLimitDocument } from './email-rate-limit.schema';
 import { EmailNotificationType, EMAIL_NOTIFICATION_LABELS, normalizeEmailNotificationType } from './email-types';
 import { EmailTemplateService } from './email-template.service';
@@ -27,6 +28,7 @@ export class EmailQueueService {
     @InjectModel(NotificationPreference.name) private preferenceModel: Model<NotificationPreferenceDocument>,
     @InjectModel(EmailRateLimit.name) private rateLimitModel: Model<EmailRateLimitDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Project.name) private projectModel: Model<ProjectDocument>,
     private templates: EmailTemplateService,
     private configService: ConfigService,
     private emailProcessorService: EmailProcessorService,
@@ -58,12 +60,13 @@ export class EmailQueueService {
 
     const appUrl = this.getAppUrl();
     const actionUrl = this.absoluteUrl(appUrl, data.link || '/notifications');
+    const projectName = await this.getProjectName(data.meta);
     const subject = `TaskFlow: ${EMAIL_NOTIFICATION_LABELS[notificationType]}`;
     const htmlBody = this.templates.render(notificationType, {
       userName: user.name || 'there',
       message: data.message,
       taskTitle: this.getMetaString(data.meta, 'taskTitle') || 'Task',
-      projectName: this.getMetaString(data.meta, 'projectName') || 'TaskFlow',
+      projectName,
       actorName: this.getMetaString(data.meta, 'actorName') || 'TaskFlow',
       actionUrl,
       timestamp: new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }),
@@ -120,6 +123,30 @@ export class EmailQueueService {
   private getMetaString(meta: Record<string, unknown> | undefined, key: string): string {
     const value = meta?.[key];
     return typeof value === 'string' ? value : '';
+  }
+
+  private async getProjectName(meta: Record<string, unknown> | undefined): Promise<string> {
+    const projectName = this.getMetaString(meta, 'projectName');
+    if (projectName) return projectName;
+
+    const projectId = this.getMetaObjectId(meta, 'projectId');
+    if (!projectId) return 'Board';
+
+    const project = await this.projectModel.findById(projectId).select('name').lean().exec();
+    return project?.name || 'Board';
+  }
+
+  private getMetaObjectId(meta: Record<string, unknown> | undefined, key: string): string {
+    const value = meta?.[key];
+    if (!value) return '';
+    if (value instanceof Types.ObjectId) return value.toString();
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object' && '_id' in value) {
+      const id = (value as { _id?: unknown })._id;
+      if (id instanceof Types.ObjectId) return id.toString();
+      if (typeof id === 'string') return id;
+    }
+    return '';
   }
 
   private getAppUrl(): string {
